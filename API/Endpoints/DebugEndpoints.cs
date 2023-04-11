@@ -88,9 +88,11 @@ public static class DebugEndpoints
 
             foreach (var user in usersToSeed)
             {
-                using var client = new HttpClient { BaseAddress = new Uri(baseAddress) };
-                var response = await (await client.PostAsJsonAsync("/user", user)).Content.ReadAsStringAsync();
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Beaerer", response);
+                var client = new HttpClient { BaseAddress = new Uri(baseAddress) };
+                var test = await client.PostAsJsonAsync("/user", user);
+                var response = await test.Content.ReadFromJsonAsync<string>();
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", response);
+                var awd = client.DefaultRequestHeaders.Authorization;
                 clients.Add(client);
             }
 
@@ -107,6 +109,11 @@ public static class DebugEndpoints
                         BackgroundCategory = BackgroundCategory
                     });
                 }
+            }
+
+            foreach (var client in clients)
+            {
+                client.Dispose();
             }
 
             return Results.Ok("Data seeded successfully.");

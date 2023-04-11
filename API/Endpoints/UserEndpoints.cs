@@ -11,7 +11,7 @@ public static class UserEndpoints
             var createdUser = dataContext.Users.Add(new UserEntity { Alias = user.Alias, Tag = user.Tag }).Entity;
             dataContext.SaveChanges();
             return Results.Ok(tokenProvider.GenerateToken(createdUser.Id, Role.User, DateTime.Now.AddYears(1)));
-        });
+        }).Produces<string>();
 
         app.MapGet("/user/{id}", (Guid id, DataContext dataContext) =>
         {
