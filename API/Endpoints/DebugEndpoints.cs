@@ -7,7 +7,7 @@ public static class DebugEndpoints
 {
     public static void MapDebugEndpoints(this WebApplication app, WebApplicationBuilder builder)
     {
-        app.MapPost("/insertSampleData", async (IOptions<AppSettings> IappSettings) =>
+        app.MapPost("/debug/insertsampledata", async (IOptions<AppSettings> IappSettings) =>
         {
             var appSettings = IappSettings.Value;
             var baseAddress = something.GetBaseAddress(builder);

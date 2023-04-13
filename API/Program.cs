@@ -106,6 +106,7 @@ app.UseAuthorization();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+app.MapConfigurationEndpoints();
 app.MapUserEndpoints();
 app.MapImageEndpoints();
 app.MapBackgroundClassificationEndpoints();

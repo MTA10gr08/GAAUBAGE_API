@@ -13,6 +13,9 @@ public partial class AppSettings
     [JsonProperty("BackgroundCategories")]
     public string[] BackgroundCategories { get; set; }
 
+    [JsonProperty("ContextCategories")]
+    public string[] ContextCategories { get; set; }
+
     [JsonProperty("TrashCategories")]
     public TrashCategory[] TrashCategories { get; set; }
 
