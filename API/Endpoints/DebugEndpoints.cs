@@ -67,9 +67,10 @@ public static class DebugEndpoints
 
             foreach (var image in imagesToSeed)
             {
-                await httpClient.PostAsJsonAsync("/image", image);
+                await httpClient.PostAsJsonAsync("/images", image);
             }
 
+            /*
             var usersToSeed = new List<UserDTO> {
                 new (){
                     Alias = "Martin",
@@ -114,10 +115,9 @@ public static class DebugEndpoints
             foreach (var client in clients)
             {
                 client.Dispose();
-            }
+            }*/
 
             return Results.Ok("Data seeded successfully.");
-
-        }).RequireHost("localhost");
+        }).AllowAnonymous().RequireHost("localhost");
     }
 }

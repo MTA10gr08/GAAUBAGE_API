@@ -38,7 +38,9 @@ public static class something
         var address = builder.Configuration.GetValue<string>("ASPNETCORE_URLS");
         if (string.IsNullOrEmpty(address)) address = builder.Configuration.GetSection("Kestrel:Endpoints:Https:Url").Value;
         if (string.IsNullOrEmpty(address)) address = builder.Configuration.GetSection("profiles:MyApi:applicationUrl").Value;
+
+        if (!string.IsNullOrEmpty(address)) address = address.Split(";", StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+
         return address;
     }
 }
-
