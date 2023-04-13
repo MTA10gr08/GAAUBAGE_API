@@ -65,6 +65,15 @@ public static class DebugEndpoints
                 new () { URI = "https://i.imgur.com/PzBCny8.jpeg" }
             };
 
+            Random rng = new();
+            int n = imagesToSeed.Count;
+            while (n > 1)
+            {
+                n--;
+                int k = rng.Next(n + 1);
+                (imagesToSeed[n], imagesToSeed[k]) = (imagesToSeed[k], imagesToSeed[n]);
+            }
+
             foreach (var image in imagesToSeed)
             {
                 await httpClient.PostAsJsonAsync("/images", image);
