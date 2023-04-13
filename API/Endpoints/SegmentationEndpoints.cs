@@ -9,7 +9,7 @@ public static class SegmentationEndpoints
 {
     public static void MapSegmentationEndpoints(this WebApplication app)
     {
-        app.MapGet("/segmentation/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("/segmentations/next", (DataContext dataContext, ClaimsPrincipal user) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -57,7 +57,7 @@ public static class SegmentationEndpoints
             return Results.Ok(trashCategoryDTO);
         }).Produces<TrashCategoryDTO>();
 
-        app.MapPost("/segmentation/submit", async (DataContext dataContext, ClaimsPrincipal user, SegmentationDTO segmentation) =>
+        app.MapPost("/segmentations/submit", async (DataContext dataContext, ClaimsPrincipal user, SegmentationDTO segmentation) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 

@@ -8,7 +8,7 @@ public static class TrashSuperCategoryEndpoints
 {
     public static void MapTrashSuperCategoryEndpoints(this WebApplication app)
     {
-        app.MapGet("/trashsupercategory/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("/trashsupercategories/next", (DataContext dataContext, ClaimsPrincipal user) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -56,7 +56,7 @@ public static class TrashSuperCategoryEndpoints
             return Results.Ok(trashBoudningBoxDTO);
         }).Produces<TrashSuperCategoryDTO>();
 
-        app.MapPost("/trashsupercategory/submit", async (DataContext dataContext, ClaimsPrincipal user, TrashSuperCategoryDTO trashSuperCategory) =>
+        app.MapPost("/trashsupercategories/submit", async (DataContext dataContext, ClaimsPrincipal user, TrashSuperCategoryDTO trashSuperCategory) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 

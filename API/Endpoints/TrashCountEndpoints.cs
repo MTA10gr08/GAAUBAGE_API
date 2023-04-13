@@ -8,7 +8,7 @@ public static class TrashCountEndpoints
 {
     public static void MapTrashCountEndpoints(this WebApplication app)
     {
-        app.MapGet("/trashcount/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("/trashcounts/next", (DataContext dataContext, ClaimsPrincipal user) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -56,7 +56,7 @@ public static class TrashCountEndpoints
             return Results.Ok(contextClassificationDTO);
         }).Produces<ContextCassificationDTO>();
 
-        app.MapPost("/trashcount/submit", async (DataContext dataContext, ClaimsPrincipal user, TrashCountDTO TrashCount) =>
+        app.MapPost("/trashcounts/submit", async (DataContext dataContext, ClaimsPrincipal user, TrashCountDTO TrashCount) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 

@@ -7,7 +7,7 @@ public static class ImageEndpoints
 {
     public static void MapImageEndpoints(this WebApplication app)
     {
-        app.MapPost("/image", async (ImageDTO image, DataContext dataContext) =>
+        app.MapPost("/images", async (ImageDTO image, DataContext dataContext) =>
         {
             var createdImage = dataContext.Images.Add(new ImageEntity { URI = image.URI }).Entity;
 
@@ -17,7 +17,7 @@ public static class ImageEndpoints
             return Results.Ok(createdImage);
         }).Produces<ImageDTO>();
 
-        app.MapGet("/image/{id}", (Guid id, DataContext dataContext) =>
+        app.MapGet("/images/{id}", (Guid id, DataContext dataContext) =>
         {
             var imageEntity = dataContext.Images.FirstOrDefault(x => x.Id == id);
             if (imageEntity != null)
@@ -32,7 +32,7 @@ public static class ImageEndpoints
             return Results.BadRequest();
         }).Produces<ImageDTO>();
 
-        app.MapGet("/image", (DataContext dataContext) =>
+        app.MapGet("/images", (DataContext dataContext) =>
         {
             var imageEntities = dataContext.Images.ToList();
             var imageDTOs = imageEntities.ConvertAll(x => new ImageDTO

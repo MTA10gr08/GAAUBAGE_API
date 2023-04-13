@@ -8,7 +8,7 @@ public static class TrashBoudningBoxEndpoints
 {
     public static void MapTrashBoundingBoxEndpoints(this WebApplication app)
     {
-        app.MapGet("/trashboundingbox/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("/trashboundingboxes/next", (DataContext dataContext, ClaimsPrincipal user) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -56,7 +56,7 @@ public static class TrashBoudningBoxEndpoints
             return Results.Ok(trashCountDTO);
         }).Produces<TrashCountDTO>();
 
-        app.MapPost("/trashboundingbox/submit", async (DataContext dataContext, ClaimsPrincipal user, TrashBoundingBoxDTO trashBoundingBox) =>
+        app.MapPost("/trashboundingboxes/submit", async (DataContext dataContext, ClaimsPrincipal user, TrashBoundingBoxDTO trashBoundingBox) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 

@@ -8,7 +8,7 @@ public static class ContextClassificationEndpoints
 {
     public static void MapContextClassificationEndpoints(this WebApplication app)
     {
-        app.MapGet("/contextclassification/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("/contextclassifications/next", (DataContext dataContext, ClaimsPrincipal user) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -56,7 +56,7 @@ public static class ContextClassificationEndpoints
             return Results.Ok(BackgroundClassificationDTO);
         }).Produces<BackgroundClassificationDTO>();
 
-        app.MapPost("/contextclassification/submit", async (DataContext dataContext, ClaimsPrincipal user, ContextCassificationDTO contextClassification) =>
+        app.MapPost("/contextclassifications/submit", async (DataContext dataContext, ClaimsPrincipal user, ContextCassificationDTO contextClassification) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 

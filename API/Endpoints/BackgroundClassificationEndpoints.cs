@@ -8,7 +8,21 @@ public static class BackgroundClassificationEndpoints
 {
     public static void MapBackgroundClassificationEndpoints(this WebApplication app)
     {
-        app.MapGet("/backgroundclassification/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        /*app.MapGet("/backgroundclassification", (DataContext dataContext) =>
+        {
+            var backgroundClassificationDTOs = dataContext.UserBackgroundClassifications.ToList().ConvertAll(x => new BackgroundClassificationDTO
+            {
+                Id = x.Id,
+                ImageId = x.,
+                UserId = x.UserId,
+                IsBackground = x.IsBackground,
+                Created = x.Created,
+                Updated = x.Updated,
+            });
+            return Results.Ok(backgroundClassificationDTOs);
+        }).Produces<List<BackgroundClassificationDTO>>();*/
+
+        app.MapGet("/backgroundclassifications/next", (DataContext dataContext, ClaimsPrincipal user) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -55,7 +69,7 @@ public static class BackgroundClassificationEndpoints
             return Results.Ok(imageDTO);
         }).Produces<ImageDTO>();
 
-        app.MapPost("/backgroundclassification/submit", async (DataContext dataContext, ClaimsPrincipal user, BackgroundClassificationDTO backgroundClassification) =>
+        app.MapPost("/backgroundclassifications/submit", async (DataContext dataContext, ClaimsPrincipal user, BackgroundClassificationDTO backgroundClassification) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
