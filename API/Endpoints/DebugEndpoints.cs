@@ -66,12 +66,10 @@ public static class DebugEndpoints
             };
 
             Random rng = new();
-            int n = imagesToSeed.Count;
-            while (n > 1)
+            for (int i = imagesToSeed.Count - 1; i >= 0; i--)
             {
-                n--;
-                int k = rng.Next(n + 1);
-                (imagesToSeed[n], imagesToSeed[k]) = (imagesToSeed[k], imagesToSeed[n]);
+                int k = rng.Next(i + 1);
+                (imagesToSeed[i], imagesToSeed[k]) = (imagesToSeed[k], imagesToSeed[i]);
             }
 
             foreach (var image in imagesToSeed)
