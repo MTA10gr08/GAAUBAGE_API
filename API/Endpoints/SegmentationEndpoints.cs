@@ -99,7 +99,7 @@ public static class SegmentationEndpoints
             try { await dataContext.SaveChangesAsync(); }
             catch (DbUpdateException ex) { return Results.BadRequest(ex.Message); }
 
-            return Results.Ok();
+            return Results.Ok(new Guid());
         });
     }
 }

@@ -98,7 +98,7 @@ public static class TrashCategoryEndpoints
             try { await dataContext.SaveChangesAsync(); }
             catch (DbUpdateException ex) { return Results.BadRequest(ex.Message); }
 
-            return Results.Ok();
+            return Results.Ok(new Guid());
         });
     }
 }

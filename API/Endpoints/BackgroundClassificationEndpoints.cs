@@ -124,7 +124,7 @@ public static class BackgroundClassificationEndpoints
                 return Results.BadRequest(errorMessage);
             }
 
-            return Results.Ok();
+            return Results.Ok(new Guid());
         });
     }
 }
