@@ -1,5 +1,6 @@
 using API.Endpoints;
 using API.Entities;
+using API.EntitiesTest;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -38,7 +39,7 @@ builder.Services.AddSingleton<TokenProvider>();
 //builder.Services.AddDbContext<DataContext>(options => options.UseMySql(connectionStringBuilder.ConnectionString, serverVersion));
 
 //builder.Services.AddDbContext<DataContext>(options => options.UseSqlite("Data Source=:memory:", x => x.UseNetTopologySuite()));
-builder.Services.AddDbContext<DataContext>(options => options.UseSqlite("Data Source=file::memory:?cache=shared", x => x.UseNetTopologySuite()));
+builder.Services.AddDbContext<DataContextTest>(options => options.UseSqlite("Data Source=file::memory:?cache=shared", x => x.UseNetTopologySuite()));
 
 //Set up Authentication and Authorization
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
@@ -95,7 +96,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<DataContext>();
+    var context = services.GetRequiredService<DataContextTest>();
     context.Database.OpenConnection();
     context.Database.EnsureCreated();
 }
