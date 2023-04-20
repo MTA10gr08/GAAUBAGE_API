@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using API.DTOs.Annotation;
 using Microsoft.Extensions.Options;
@@ -14,7 +15,58 @@ public static class DebugEndpoints
 
             if (string.IsNullOrEmpty(baseAddress)) return Results.BadRequest("Could not obtain base address for seeding data");
 
-            using var httpClient = new HttpClient { BaseAddress = new Uri(baseAddress) };
+            var usersToSeed = new List<UserDTO> {
+                new (){
+                    Alias = "Martin",
+                    Tag = "SampleData"
+                },
+                new (){
+                    Alias = "Marcus",
+                    Tag = "SampleData"
+                },
+                new (){
+                    Alias = "Anne",
+                    Tag = "SampleData"
+                },
+                new (){
+                    Alias = "Rick",
+                    Tag = "SampleData"
+                },
+                new (){
+                    Alias = "Freja",
+                    Tag = "SampleData"
+                },
+                new (){
+                    Alias = "Mads",
+                    Tag = "SampleData"
+                },
+                new (){
+                    Alias = "Thomas",
+                    Tag = "SampleData"
+                },
+                new (){
+                    Alias = "Oscar",
+                    Tag = "SampleData"
+                },
+                new (){
+                    Alias = "Mikkel",
+                    Tag = "SampleData"
+                },
+                new (){
+                    Alias = "David",
+                    Tag = "SampleData"
+                }};
+
+            var clients = new List<HttpClient>();
+
+            foreach (var user in usersToSeed)
+            {
+                var client = new HttpClient { BaseAddress = new Uri(baseAddress) };
+                var response = await client.PostAsJsonAsync("/users/admin", user);
+                var token = await response.Content.ReadFromJsonAsync<string>();
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                clients.Add(client);
+            }
 
             var imagesToSeed = new List<ImageDTO> {
                 new () { URI = "https://i.imgur.com/WGU4wHO.jpeg" },
@@ -74,55 +126,27 @@ public static class DebugEndpoints
 
             foreach (var image in imagesToSeed)
             {
-                await httpClient.PostAsJsonAsync("/images", image);
+                await clients[rng.Next(0, clients.Count)].PostAsJsonAsync("/images", image);
             }
 
-            /*
-            var usersToSeed = new List<UserDTO> {
-                new (){
-                    Alias = "Martin",
-                    Tag = "SampleData"
-                },
-                new (){
-                    Alias = "Marcus",
-                    Tag = "SampleData"
-                },
-                new (){
-                    Alias = "Anne",
-                    Tag = "SampleData"
-                }};
-
-            var clients = new List<HttpClient>();
-
-            foreach (var user in usersToSeed)
+            foreach (var client in clients)
             {
-                var client = new HttpClient { BaseAddress = new Uri(baseAddress) };
-                var test = await client.PostAsJsonAsync("/user", user);
-                var response = await test.Content.ReadFromJsonAsync<string>();
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", response);
-                var awd = client.DefaultRequestHeaders.Authorization;
-                clients.Add(client);
-            }
-
-            for (int i = 0; i < imagesToSeed.Count; i++)
-            {
-                string BackgroundCategory = appSettings.BackgroundCategories[new Random().Next(appSettings.BackgroundCategories.Length)];
-                foreach (var client in clients)
+                var response = await client.GetAsync("imageannotations/backgroundclassifications/next");
+                while (response.StatusCode == HttpStatusCode.OK)
                 {
-                    var response = await client.GetAsync("/backgroundclassification/next");
-                    var backgroundClassificationDTO = await response.Content.ReadFromJsonAsync<ImageDTO>();
-                    var responseresponse = await client.PostAsJsonAsync("/backgroundclassification", new BackgroundClassificationDTO
+                var responseContent = await response.Content.ReadFromJsonAsync<ImageAnnotationDTO>();
+                    var responseresponse = await client.PostAsJsonAsync($"/imageannotations/{responseContent.ID}/backgroundclassifications", new BackgroundClassificationDTO
                     {
-                        ImageId = backgroundClassificationDTO.Id,
-                        BackgroundCategory = BackgroundCategory
+                        BackgroundClassificationLabels = appSettings.BackgroundCategories
                     });
+                response = await client.GetAsync("imageannotations/backgroundclassifications/next");
                 }
             }
 
             foreach (var client in clients)
             {
                 client.Dispose();
-            }*/
+            }
 
             return Results.Ok("Data seeded successfully.");
         }).AllowAnonymous().RequireHost("localhost");

@@ -10,26 +10,33 @@ public static class UserEndpoints
         {
             var createdUser = dataContext.Users.Add(new UserEntity { Alias = user.Alias, Tag = user.Tag }).Entity;
             dataContext.SaveChanges();
-            return Results.Ok(tokenProvider.GenerateToken(createdUser.Id, Role.User, DateTime.Now.AddYears(1)));
+            return Results.Ok(tokenProvider.GenerateToken(createdUser.ID, Role.User, DateTime.Now.AddYears(1)));
         }).Produces<string>();
+
+        app.MapPost("/users/admin", (UserDTO user, DataContext dataContext, TokenProvider tokenProvider) =>
+        {
+            var createdUser = dataContext.Users.Add(new UserEntity { Alias = user.Alias, Tag = user.Tag }).Entity;
+            dataContext.SaveChanges();
+            return Results.Ok(tokenProvider.GenerateToken(createdUser.ID, Role.Admin, DateTime.Now.AddYears(1)));
+        }).Produces<string>().RequireHost("localhost");
 
         app.MapGet("/users/{id}", (Guid id, DataContext dataContext) =>
         {
-            var userEntity = dataContext.Users.FirstOrDefault(x => x.Id == id);
+            var userEntity = dataContext.Users.FirstOrDefault(x => x.ID == id);
             if (userEntity != null)
             {
                 var userDTO = new UserDTO
                 {
-                    Id = userEntity.Id,
+                    ID = userEntity.ID,
                     Alias = userEntity.Alias,
                     Tag = userEntity.Tag,
-                    UserContextCategoryIds = userEntity.UserContextCategories.Select(x => x.Id).ToList(),
-                    UserBackgroundContextIds = userEntity.UserBackgroundContexts.Select(x => x.Id).ToList(),
-                    UserTrashCountIds = userEntity.UserTrashCounts.Select(x => x.Id).ToList(),
-                    UserTrashBoundingBoxIds = userEntity.UserTrashBoundingBoxes.Select(x => x.Id).ToList(),
-                    UserTrashSuperCategoryIds = userEntity.UserTrashSuperCategories.Select(x => x.Id).ToList(),
-                    UserTrashCategoryIds = userEntity.UserTrashCategories.Select(x => x.Id).ToList(),
-                    UserSegmentationIds = userEntity.UserSegmentations.Select(x => x.Id).ToList(),
+                    Images = userEntity.Images.Select(x => x.ID).ToList(),
+                    BackgroundClassificationLabels = userEntity.BackgroundClassifications.Select(x => x.ID).ToList(),
+                    ContextClassifications = userEntity.ContextClassifications.Select(x => x.ID).ToList(),
+                    SubImageGroups = userEntity.SubImageGroups.Select(x => x.ID).ToList(),
+                    TrashSuperCategories = userEntity.TrashSuperCategories.Select(x => x.ID).ToList(),
+                    TrashSubCategories = userEntity.TrashSubCategories.Select(x => x.ID).ToList(),
+                    Segmentations = userEntity.Segmentations.Select(x => x.ID).ToList(),
                 };
                 return Results.Ok(userDTO);
             }

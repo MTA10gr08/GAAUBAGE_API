@@ -1,14 +1,14 @@
 using NetTopologySuite.Geometries;
 using Microsoft.EntityFrameworkCore;
 
-namespace API.EntitiesTest;
-public class DataContextTest : DbContext
+namespace API.Entities;
+public class DataContext : DbContext
 {
     public DbSet<UserEntity> Users => Set<UserEntity>();
     public DbSet<ImageEntity> Images => Set<ImageEntity>();
     public DbSet<ImageAnnotationEntity> ImageAnnotations => Set<ImageAnnotationEntity>();
     public DbSet<BackgroundClassificationEntity> BackgroundClassifications => Set<BackgroundClassificationEntity>();
-    public DbSet<BackgroundClassificationLabelEntity> BackgroundClassificationLabels => Set<BackgroundClassificationLabelEntity>();
+    public DbSet<BackgroundClassificationStringEntity> BackgroundClassificationStrings => Set<BackgroundClassificationStringEntity>();
     public DbSet<ContextClassificationEntity> ContextClassifications => Set<ContextClassificationEntity>();
     public DbSet<BoundingBoxEntity> BoundingBoxes => Set<BoundingBoxEntity>();
     public DbSet<SubImageGroupEntity> SubImageGroups => Set<SubImageGroupEntity>();
@@ -17,7 +17,7 @@ public class DataContextTest : DbContext
     public DbSet<TrashSubCategoryEntity> TrashSubCategories => Set<TrashSubCategoryEntity>();
     public DbSet<SegmentationEntity> Segmentations => Set<SegmentationEntity>();
 
-    public DataContextTest(DbContextOptions<DataContextTest> options) : base(options)
+    public DataContext(DbContextOptions<DataContext> options) : base(options)
     {
         Database.EnsureCreated();
     }
@@ -30,7 +30,7 @@ public class DataContextTest : DbContext
             entity.Property(e => e.Alias).HasMaxLength(100);
             entity.Property(e => e.Tag).HasMaxLength(100);
             entity.HasMany(e => e.Images).WithOne(e => e.User).HasForeignKey(e => e.UserID);
-            entity.HasMany(e => e.BackgroundClassificationLabels).WithMany(e => e.Users);
+            entity.HasMany(e => e.BackgroundClassifications).WithMany(e => e.Users);
             entity.HasMany(e => e.ContextClassifications).WithMany(e => e.Users);
             entity.HasMany(e => e.SubImageGroups).WithOne(e => e.User).HasForeignKey(e => e.UserID);
             entity.HasMany(e => e.TrashSuperCategories).WithMany(e => e.Users);
@@ -48,10 +48,8 @@ public class DataContextTest : DbContext
 
         modelBuilder.Entity<ImageAnnotationEntity>(entity =>
         {
-            entity.HasOne(e => e.Image).WithOne(e => e.ImageAnnotation).HasForeignKey<ImageEntity>(e => e.ImageAnnotationId);
-            entity.HasOne(e => e.BackgroundClassificationConsensus).WithMany().HasForeignKey(e => e.BackgroundClassificationConsensusId);
+            entity.HasOne(e => e.Image).WithOne(e => e.ImageAnnotation).HasForeignKey<ImageEntity>(e => e.ImageAnnotationID);
             entity.HasMany(e => e.BackgroundClassifications).WithOne(e => e.ImageAnnotation).HasForeignKey(e => e.ImageAnnotationID);
-            entity.HasOne(e => e.ContextClassificationConsensus).WithMany().HasForeignKey(e => e.ContextClassificationConsensusId);
             entity.HasMany(e => e.ContextClassifications).WithOne(e => e.ImageAnnotation).HasForeignKey(e => e.ImageAnnotationID);
             entity.HasMany(e => e.SubImagesConsensus).WithOne(e => e.ImageAnnotation).HasForeignKey(e => e.ImageAnnotationID);
             entity.HasMany(e => e.SubImages).WithOne(e => e.ImageAnnotation).HasForeignKey(e => e.ImageAnnotationID);
@@ -61,15 +59,15 @@ public class DataContextTest : DbContext
         modelBuilder.Entity<BackgroundClassificationEntity>(entity =>
         {
             entity.HasOne(e => e.ImageAnnotation).WithMany(e => e.BackgroundClassifications).HasForeignKey(e => e.ImageAnnotationID);
-            entity.HasMany(e => e.BackgroundClassificationLabels).WithOne(e => e.BackgroundClassification).HasForeignKey(e => e.BackgroundClassificationID);
+            entity.HasMany(e => e.BackgroundClassificationStrings).WithOne(e => e.BackgroundClassification).HasForeignKey(e => e.BackgroundClassificationID);
+            entity.HasMany(e => e.Users).WithMany(e => e.BackgroundClassifications);
         });
 
-        ConfigureBaseEntity<BackgroundClassificationLabelEntity>(modelBuilder);
-        modelBuilder.Entity<BackgroundClassificationLabelEntity>(entity =>
+        ConfigureBaseEntity<BackgroundClassificationStringEntity>(modelBuilder);
+        modelBuilder.Entity<BackgroundClassificationStringEntity>(entity =>
         {
-            entity.HasOne(e => e.BackgroundClassification).WithMany(e => e.BackgroundClassificationLabels).HasForeignKey(e => e.BackgroundClassificationID);
-            entity.Property(e => e.BackgroundClassificationLabel).HasMaxLength(1000);
-            entity.HasMany(e => e.Users).WithMany(e => e.BackgroundClassificationLabels);
+            entity.HasOne(e => e.BackgroundClassification).WithMany(e => e.BackgroundClassificationStrings).HasForeignKey(e => e.BackgroundClassificationID);
+            entity.Property(e => e.value).HasMaxLength(1000);
         });
 
         ConfigureBaseEntity<ContextClassificationEntity>(modelBuilder);
@@ -104,11 +102,8 @@ public class DataContextTest : DbContext
         {
             entity.HasOne(e => e.ImageAnnotation).WithMany(e => e.SubImagesConsensus).HasForeignKey(e => e.ImageAnnotationID).IsRequired();
             entity.HasOne(e => e.SubImage).WithOne(e => e.SubImageAnnotation).HasForeignKey<BoundingBoxEntity>(e => e.SubImageAnnotationID).IsRequired();
-            entity.HasOne(e => e.TrashSubCategoryConsensus).WithOne(e => e.SubImageAnnotation).HasForeignKey<TrashSubCategoryEntity>(e => e.SubImageAnnotationID).IsRequired(false);
             entity.HasMany(e => e.TrashSubCategories).WithOne(e => e.SubImageAnnotation).HasForeignKey(e => e.SubImageAnnotationID).IsRequired(false);
-            entity.HasOne(e => e.TrashSuperCategoryConsensus).WithOne(e => e.SubImageAnnotation).HasForeignKey<TrashSuperCategoryEntity>(e => e.SubImageAnnotationID).IsRequired(false);
             entity.HasMany(e => e.TrashSuperCategories).WithOne(e => e.SubImageAnnotation).HasForeignKey(e => e.SubImageAnnotationID).IsRequired(false);
-            entity.HasOne(e => e.SegmentationConsensus).WithOne(e => e.SubImageAnnotation).HasForeignKey<SegmentationEntity>(e => e.SubImageAnnotationID).IsRequired(false);
             entity.HasMany(e => e.Segmentations).WithOne(e => e.SubImageAnnotation).HasForeignKey(e => e.SubImageAnnotationID).IsRequired(false);
         });
 

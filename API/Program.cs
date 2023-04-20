@@ -1,6 +1,5 @@
 using API.Endpoints;
 using API.Entities;
-using API.EntitiesTest;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -39,7 +38,7 @@ builder.Services.AddSingleton<TokenProvider>();
 //builder.Services.AddDbContext<DataContext>(options => options.UseMySql(connectionStringBuilder.ConnectionString, serverVersion));
 
 //builder.Services.AddDbContext<DataContext>(options => options.UseSqlite("Data Source=:memory:", x => x.UseNetTopologySuite()));
-builder.Services.AddDbContext<DataContextTest>(options => options.UseSqlite("Data Source=file::memory:?cache=shared", x => x.UseNetTopologySuite()));
+builder.Services.AddDbContext<DataContext>(options => options.UseSqlite("Data Source=file::memory:?cache=shared", x => x.UseNetTopologySuite()));
 
 //Set up Authentication and Authorization
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
@@ -96,7 +95,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<DataContextTest>();
+    var context = services.GetRequiredService<DataContext>();
     context.Database.OpenConnection();
     context.Database.EnsureCreated();
 }
@@ -110,13 +109,13 @@ app.UseSwaggerUI();
 app.MapConfigurationEndpoints();
 app.MapUserEndpoints();
 app.MapImageEndpoints();
-app.MapBackgroundClassificationEndpoints();
-app.MapContextClassificationEndpoints();
+app.MapImageAnnotationEndpoints();
+/*app.MapContextClassificationEndpoints();
 app.MapTrashCountEndpoints();
 app.MapTrashBoundingBoxEndpoints();
 app.MapTrashSuperCategoryEndpoints();
 app.MapTrashCategoryEndpoints();
-app.MapSegmentationEndpoints();
+app.MapSegmentationEndpoints();*/
 
 if (builder.Environment.IsDevelopment())
 {

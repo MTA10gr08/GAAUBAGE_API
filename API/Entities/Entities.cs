@@ -1,7 +1,8 @@
 using Microsoft.VisualBasic;
 using NetTopologySuite.Geometries;
 
-namespace API.EntitiesTest;
+namespace API.Entities;
+
 public abstract class BaseEntity
 {
     public BaseEntity() { }
@@ -16,7 +17,7 @@ public class UserEntity : BaseEntity
     public string Alias { get; set; }
     public string Tag { get; set; }
     public ICollection<ImageEntity> Images { get; set; } = new HashSet<ImageEntity>();
-    public ICollection<BackgroundClassificationLabelEntity> BackgroundClassificationLabels { get; set; } = new HashSet<BackgroundClassificationLabelEntity>();
+    public ICollection<BackgroundClassificationEntity> BackgroundClassifications { get; set; } = new HashSet<BackgroundClassificationEntity>();
     public ICollection<ContextClassificationEntity> ContextClassifications { get; set; } = new HashSet<ContextClassificationEntity>();
     public ICollection<SubImageGroupEntity> SubImageGroups { get; set; } = new HashSet<SubImageGroupEntity>();
     public ICollection<TrashSuperCategoryEntity> TrashSuperCategories { get; set; } = new HashSet<TrashSuperCategoryEntity>();
@@ -27,9 +28,9 @@ public class UserEntity : BaseEntity
 public class ImageEntity : BaseEntity
 {
     public Guid UserID { get; set; }
-    public UserEntity? User { get; set; }
+    public UserEntity User { get; set; }
 
-    public Guid ImageAnnotationId { get; set; }
+    public Guid ImageAnnotationID { get; set; }
     public ImageAnnotationEntity ImageAnnotation { get; set; }
 
     public string URI { get; set; }
@@ -39,32 +40,49 @@ public class ImageAnnotationEntity : BaseEntity
 {
     public Guid ImageID { get; set; }
     public ImageEntity Image { get; set; }
-
-    public Guid? BackgroundClassificationConsensusId { get; set; }
-    public BackgroundClassificationEntity? BackgroundClassificationConsensus { get; set; }
     public ICollection<BackgroundClassificationEntity> BackgroundClassifications { get; set; } = new HashSet<BackgroundClassificationEntity>();
+    public BackgroundClassificationEntity? BackgroundClassificationConsensus
+    {
+        get
+        {
+            int total = BackgroundClassifications.Count;
+            double threshold = total * 0.75;
+            return BackgroundClassifications.FirstOrDefault(x => x.Users.Count >= threshold);
+        }
+    }
 
-    public Guid? ContextClassificationConsensusId { get; set; }
-    public ContextClassificationEntity? ContextClassificationConsensus { get; set; }
     public ICollection<ContextClassificationEntity> ContextClassifications { get; set; } = new HashSet<ContextClassificationEntity>();
+    public ContextClassificationEntity? ContextClassificationConsensus
+    {
+        get
+        {
+            int total = ContextClassifications.Count;
+            double threshold = total * 0.75;
+            return ContextClassifications.FirstOrDefault(x => x.Users.Count >= threshold);
+        }
+    }
 
     public ICollection<SubImageAnnotationEntity> SubImagesConsensus { get; set; } = new HashSet<SubImageAnnotationEntity>();
     public ICollection<SubImageGroupEntity> SubImages { get; set; } = new HashSet<SubImageGroupEntity>();
+    public bool IsInProgress => !(BackgroundClassificationConsensus && ContextClassificationConsensus)
+        && (BackgroundClassifications.Any() || ContextClassifications.Any());
+    public bool IsComplete => BackgroundClassificationConsensus && ContextClassificationConsensus;
 }
 
 public class BackgroundClassificationEntity : BaseEntity
 {
     public Guid ImageAnnotationID { get; set; }
     public ImageAnnotationEntity ImageAnnotation { get; set; }
-    public ICollection<BackgroundClassificationLabelEntity> BackgroundClassificationLabels { get; set; } = new HashSet<BackgroundClassificationLabelEntity>();
+    public ICollection<BackgroundClassificationStringEntity> BackgroundClassificationStrings { get; set; } = new HashSet<BackgroundClassificationStringEntity>();
+    public ICollection<UserEntity> Users { get; set; } = new HashSet<UserEntity>();
 }
 
-public class BackgroundClassificationLabelEntity : BaseEntity
+public class BackgroundClassificationStringEntity : BaseEntity
 {
+    public string value { get; set; }
     public Guid BackgroundClassificationID { get; set; }
     public BackgroundClassificationEntity BackgroundClassification { get; set; }
-    public string BackgroundClassificationLabel { get; set; }
-    public ICollection<UserEntity> Users { get; set; } = new HashSet<UserEntity>();
+    public static implicit operator string(BackgroundClassificationStringEntity r) => r.value;
 }
 
 public class ContextClassificationEntity : BaseEntity
@@ -105,16 +123,8 @@ public class SubImageAnnotationEntity : BaseEntity
     public Guid SubImageID { get; set; }
     public BoundingBoxEntity SubImage { get; set; }
 
-    public Guid? TrashSuperCategoryConsensusID { get; set; }
-    public TrashSuperCategoryEntity? TrashSuperCategoryConsensus { get; set; }
     public ICollection<TrashSuperCategoryEntity> TrashSuperCategories { get; set; } = new HashSet<TrashSuperCategoryEntity>();
-
-    public Guid? TrashSubCategoryConsensusID { get; set; }
-    public TrashSubCategoryEntity? TrashSubCategoryConsensus { get; set; }
     public ICollection<TrashSubCategoryEntity> TrashSubCategories { get; set; } = new HashSet<TrashSubCategoryEntity>();
-
-    public Guid? SegmentationConsensusID { get; set; }
-    public SegmentationEntity? SegmentationConsensus { get; set; }
     public ICollection<SegmentationEntity> Segmentations { get; set; } = new HashSet<SegmentationEntity>();
 }
 
