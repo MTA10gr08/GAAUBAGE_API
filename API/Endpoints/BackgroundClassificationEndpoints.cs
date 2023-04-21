@@ -140,7 +140,7 @@ public static class BackgroundclassifiCationEndpoints
                 Created = x.Created
             }).ToList();
 
-            return Results.Ok(backgroundClassifications);
-        }).Produces<List<BackgroundClassificationDTO>>();
+            return Results.Ok();
+        });
     }
 }

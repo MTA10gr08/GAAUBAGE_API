@@ -9,7 +9,7 @@ public static class SubImageEndpoints
 {
     public static void MapSubImageEndpoints(this WebApplication app)
     {
-        app.MapGet("imageannotations/SubImageEndpoints/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("imageannotations/subimages/next", (DataContext dataContext, ClaimsPrincipal user) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -59,7 +59,7 @@ public static class SubImageEndpoints
             return Results.Ok(imageAnnotationDTO);
         }).Produces<ImageAnnotationDTO>();
 
-        app.MapPost("imageannotations/{id}/SubImageEndpoints", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, SubImageAnnotationDTO subImageAnnotation) =>
+        app.MapPost("imageannotations/{id}/subimages", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, SubImageAnnotationDTO subImageAnnotation) =>
         {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
