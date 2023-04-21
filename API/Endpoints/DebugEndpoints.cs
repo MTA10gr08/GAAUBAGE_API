@@ -137,9 +137,23 @@ public static class DebugEndpoints
                 var responseContent = await response.Content.ReadFromJsonAsync<ImageAnnotationDTO>();
                     var responseresponse = await client.PostAsJsonAsync($"/imageannotations/{responseContent.ID}/backgroundclassifications", new BackgroundClassificationDTO
                     {
-                        BackgroundClassificationLabels = appSettings.BackgroundCategories
+                        BackgroundClassificationLabels = appSettings.BackgroundCategories.WeightedRandomSubset().ToArray()
                     });
                 response = await client.GetAsync("imageannotations/backgroundclassifications/next");
+                }
+            }
+
+            foreach (var client in clients)
+            {
+                var response = await client.GetAsync("imageannotations/ContextClassifications/next");
+                while (response.StatusCode == HttpStatusCode.OK)
+                {
+                var responseContent = await response.Content.ReadFromJsonAsync<ImageAnnotationDTO>();
+                    var responseresponse = await client.PostAsJsonAsync($"/imageannotations/{responseContent.ID}/ContextClassifications", new ContextClassificationDTO
+                    {
+                        ContextClassificationLabel = appSettings.ContextCategories.WeightedRandom()
+                    });
+                response = await client.GetAsync("imageannotations/ContextClassifications/next");
                 }
             }
 

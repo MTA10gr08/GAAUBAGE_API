@@ -10,8 +10,7 @@ public class DataContext : DbContext
     public DbSet<BackgroundClassificationEntity> BackgroundClassifications => Set<BackgroundClassificationEntity>();
     public DbSet<BackgroundClassificationStringEntity> BackgroundClassificationStrings => Set<BackgroundClassificationStringEntity>();
     public DbSet<ContextClassificationEntity> ContextClassifications => Set<ContextClassificationEntity>();
-    public DbSet<BoundingBoxEntity> BoundingBoxes => Set<BoundingBoxEntity>();
-    public DbSet<SubImageGroupEntity> SubImageGroups => Set<SubImageGroupEntity>();
+    public DbSet<SubImageAnnotationGroupEntity> SubImageGroups => Set<SubImageAnnotationGroupEntity>();
     public DbSet<SubImageAnnotationEntity> SubImageAnnotations => Set<SubImageAnnotationEntity>();
     public DbSet<TrashSuperCategoryEntity> TrashSuperCategories => Set<TrashSuperCategoryEntity>();
     public DbSet<TrashSubCategoryEntity> TrashSubCategories => Set<TrashSubCategoryEntity>();
@@ -32,7 +31,7 @@ public class DataContext : DbContext
             entity.HasMany(e => e.Images).WithOne(e => e.User).HasForeignKey(e => e.UserID);
             entity.HasMany(e => e.BackgroundClassifications).WithMany(e => e.Users);
             entity.HasMany(e => e.ContextClassifications).WithMany(e => e.Users);
-            entity.HasMany(e => e.SubImageGroups).WithOne(e => e.User).HasForeignKey(e => e.UserID);
+            entity.HasMany(e => e.SubImageAnnotationGroups).WithMany(e => e.Users);
             entity.HasMany(e => e.TrashSuperCategories).WithMany(e => e.Users);
             entity.HasMany(e => e.TrashSubCategories).WithMany(e => e.Users);
             entity.HasMany(e => e.Segmentations).WithOne(e => e.User).HasForeignKey(e => e.UserID);
@@ -51,8 +50,7 @@ public class DataContext : DbContext
             entity.HasOne(e => e.Image).WithOne(e => e.ImageAnnotation).HasForeignKey<ImageEntity>(e => e.ImageAnnotationID);
             entity.HasMany(e => e.BackgroundClassifications).WithOne(e => e.ImageAnnotation).HasForeignKey(e => e.ImageAnnotationID);
             entity.HasMany(e => e.ContextClassifications).WithOne(e => e.ImageAnnotation).HasForeignKey(e => e.ImageAnnotationID);
-            entity.HasMany(e => e.SubImagesConsensus).WithOne(e => e.ImageAnnotation).HasForeignKey(e => e.ImageAnnotationID);
-            entity.HasMany(e => e.SubImages).WithOne(e => e.ImageAnnotation).HasForeignKey(e => e.ImageAnnotationID);
+            entity.HasMany(e => e.SubImageAnnotationGroups).WithOne(e => e.ImageAnnotation).HasForeignKey(e => e.ImageAnnotationID);
         });
 
         ConfigureBaseEntity<BackgroundClassificationEntity>(modelBuilder);
@@ -78,33 +76,25 @@ public class DataContext : DbContext
             entity.HasMany(e => e.Users).WithMany(e => e.ContextClassifications);
         });
 
-        ConfigureBaseEntity<BoundingBoxEntity>(modelBuilder);
-        modelBuilder.Entity<BoundingBoxEntity>(entity =>
+        ConfigureBaseEntity<SubImageAnnotationGroupEntity>(modelBuilder);
+        modelBuilder.Entity<SubImageAnnotationGroupEntity>(entity =>
         {
-            entity.HasOne(e => e.SubImageAnnotation).WithOne(e => e.SubImage).HasForeignKey<SubImageAnnotationEntity>(e => e.SubImageID).IsRequired(false);
-            entity.HasOne(e => e.SubImageGroup).WithMany(e => e.SubImages).HasForeignKey(e => e.SubImageGroupID).IsRequired(false);
-            entity.Property(e => e.X).IsRequired();
-            entity.Property(e => e.Y).IsRequired();
-            entity.Property(e => e.Width).IsRequired();
-            entity.Property(e => e.Height).IsRequired();
-        });
-
-        ConfigureBaseEntity<SubImageGroupEntity>(modelBuilder);
-        modelBuilder.Entity<SubImageGroupEntity>(entity =>
-        {
-            entity.HasOne(e => e.ImageAnnotation).WithMany(e => e.SubImages).HasForeignKey(e => e.ImageAnnotationID).IsRequired();
-            entity.HasOne(e => e.User).WithMany(e => e.SubImageGroups).HasForeignKey(e => e.UserID).IsRequired();
-            entity.HasMany(e => e.SubImages).WithOne(e => e.SubImageGroup).HasForeignKey(e => e.SubImageGroupID);
+            entity.HasOne(e => e.ImageAnnotation).WithMany(e => e.SubImageAnnotationGroups).HasForeignKey(e => e.ImageAnnotationID).IsRequired();
+            entity.HasMany(e => e.Users).WithMany(e => e.SubImageAnnotationGroups);
+            entity.HasMany(e => e.SubImageAnnotations).WithOne(e => e.SubImageAnnotationGroup).HasForeignKey(e => e.SubImageAnnotationGroupID).IsRequired();
         });
 
         ConfigureBaseEntity<SubImageAnnotationEntity>(modelBuilder);
         modelBuilder.Entity<SubImageAnnotationEntity>(entity =>
         {
-            entity.HasOne(e => e.ImageAnnotation).WithMany(e => e.SubImagesConsensus).HasForeignKey(e => e.ImageAnnotationID).IsRequired();
-            entity.HasOne(e => e.SubImage).WithOne(e => e.SubImageAnnotation).HasForeignKey<BoundingBoxEntity>(e => e.SubImageAnnotationID).IsRequired();
-            entity.HasMany(e => e.TrashSubCategories).WithOne(e => e.SubImageAnnotation).HasForeignKey(e => e.SubImageAnnotationID).IsRequired(false);
-            entity.HasMany(e => e.TrashSuperCategories).WithOne(e => e.SubImageAnnotation).HasForeignKey(e => e.SubImageAnnotationID).IsRequired(false);
-            entity.HasMany(e => e.Segmentations).WithOne(e => e.SubImageAnnotation).HasForeignKey(e => e.SubImageAnnotationID).IsRequired(false);
+            entity.HasOne(e => e.SubImageAnnotationGroup).WithMany(e => e.SubImageAnnotations).HasForeignKey(e => e.SubImageAnnotationGroupID).IsRequired();
+            entity.HasMany(e => e.TrashSubCategories).WithOne(e => e.SubImageAnnotation).HasForeignKey(e => e.SubImageAnnotationID).IsRequired();
+            entity.HasMany(e => e.TrashSuperCategories).WithOne(e => e.SubImageAnnotation).HasForeignKey(e => e.SubImageAnnotationID).IsRequired();
+            entity.HasMany(e => e.Segmentations).WithOne(e => e.SubImageAnnotation).HasForeignKey(e => e.SubImageAnnotationID).IsRequired();
+            entity.Property(e => e.X);
+            entity.Property(e => e.Y);
+            entity.Property(e => e.Width);
+            entity.Property(e => e.Height);
         });
 
         ConfigureBaseEntity<TrashSubCategoryEntity>(modelBuilder);

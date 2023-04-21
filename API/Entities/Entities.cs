@@ -19,7 +19,7 @@ public class UserEntity : BaseEntity
     public ICollection<ImageEntity> Images { get; set; } = new HashSet<ImageEntity>();
     public ICollection<BackgroundClassificationEntity> BackgroundClassifications { get; set; } = new HashSet<BackgroundClassificationEntity>();
     public ICollection<ContextClassificationEntity> ContextClassifications { get; set; } = new HashSet<ContextClassificationEntity>();
-    public ICollection<SubImageGroupEntity> SubImageGroups { get; set; } = new HashSet<SubImageGroupEntity>();
+    public ICollection<SubImageAnnotationGroupEntity> SubImageAnnotationGroups { get; set; } = new HashSet<SubImageAnnotationGroupEntity>();
     public ICollection<TrashSuperCategoryEntity> TrashSuperCategories { get; set; } = new HashSet<TrashSuperCategoryEntity>();
     public ICollection<TrashSubCategoryEntity> TrashSubCategories { get; set; } = new HashSet<TrashSubCategoryEntity>();
     public ICollection<SegmentationEntity> Segmentations { get; set; } = new HashSet<SegmentationEntity>();
@@ -40,6 +40,7 @@ public class ImageAnnotationEntity : BaseEntity
 {
     public Guid ImageID { get; set; }
     public ImageEntity Image { get; set; }
+
     public ICollection<BackgroundClassificationEntity> BackgroundClassifications { get; set; } = new HashSet<BackgroundClassificationEntity>();
     public BackgroundClassificationEntity? BackgroundClassificationConsensus
     {
@@ -62,8 +63,17 @@ public class ImageAnnotationEntity : BaseEntity
         }
     }
 
-    public ICollection<SubImageAnnotationEntity> SubImagesConsensus { get; set; } = new HashSet<SubImageAnnotationEntity>();
-    public ICollection<SubImageGroupEntity> SubImages { get; set; } = new HashSet<SubImageGroupEntity>();
+    public ICollection<SubImageAnnotationGroupEntity> SubImageAnnotationGroups { get; set; } = new HashSet<SubImageAnnotationGroupEntity>();
+    public SubImageAnnotationGroupEntity? SubImageAnnotationGroupConsensus
+    {
+        get
+        {
+            int total = SubImageAnnotationGroups.Count;
+            double threshold = total * 0.75;
+            return SubImageAnnotationGroups.FirstOrDefault(x => x.Users.Count >= threshold);
+        }
+    }
+
     public bool IsInProgress => !(BackgroundClassificationConsensus && ContextClassificationConsensus)
         && (BackgroundClassifications.Any() || ContextClassifications.Any());
     public bool IsComplete => BackgroundClassificationConsensus && ContextClassificationConsensus;
@@ -93,35 +103,23 @@ public class ContextClassificationEntity : BaseEntity
     public ICollection<UserEntity> Users { get; set; } = new HashSet<UserEntity>();
 }
 
-public class BoundingBoxEntity : BaseEntity
-{
-    public Guid SubImageGroupID { get; set; }
-    public SubImageGroupEntity? SubImageGroup { get; set; }
-    public Guid SubImageAnnotationID { get; set; }
-    public SubImageAnnotationEntity? SubImageAnnotation { get; set; }
-
-    public uint X { get; set; }
-    public uint Y { get; set; }
-    public uint Width { get; set; }
-    public uint Height { get; set; }
-}
-
-public class SubImageGroupEntity : BaseEntity
+public class SubImageAnnotationGroupEntity : BaseEntity
 {
     public Guid ImageAnnotationID { get; set; }
     public ImageAnnotationEntity ImageAnnotation { get; set; }
-    public Guid UserID { get; set; }
-    public UserEntity User { get; set; }
-    public ICollection<BoundingBoxEntity> SubImages { get; set; } = new HashSet<BoundingBoxEntity>();
+    public ICollection<UserEntity> Users { get; set; }
+    public ICollection<SubImageAnnotationEntity> SubImageAnnotations { get; set; } = new HashSet<SubImageAnnotationEntity>();
 }
 
 public class SubImageAnnotationEntity : BaseEntity
 {
-    public Guid ImageAnnotationID { get; set; }
-    public ImageAnnotationEntity ImageAnnotation { get; set; }
+    public uint X { get; set; }
+    public uint Y { get; set; }
+    public uint Width { get; set; }
+    public uint Height { get; set; }
 
-    public Guid SubImageID { get; set; }
-    public BoundingBoxEntity SubImage { get; set; }
+    public Guid SubImageAnnotationGroupID { get; set; }
+    public SubImageAnnotationGroupEntity SubImageAnnotationGroup { get; set; }
 
     public ICollection<TrashSuperCategoryEntity> TrashSuperCategories { get; set; } = new HashSet<TrashSuperCategoryEntity>();
     public ICollection<TrashSubCategoryEntity> TrashSubCategories { get; set; } = new HashSet<TrashSubCategoryEntity>();

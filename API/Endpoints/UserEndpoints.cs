@@ -33,7 +33,7 @@ public static class UserEndpoints
                     Images = userEntity.Images.Select(x => x.ID).ToList(),
                     BackgroundClassificationLabels = userEntity.BackgroundClassifications.Select(x => x.ID).ToList(),
                     ContextClassifications = userEntity.ContextClassifications.Select(x => x.ID).ToList(),
-                    SubImageGroups = userEntity.SubImageGroups.Select(x => x.ID).ToList(),
+                    SubImageGroups = userEntity.SubImageAnnotationGroups.Select(x => x.ID).ToList(),
                     TrashSuperCategories = userEntity.TrashSuperCategories.Select(x => x.ID).ToList(),
                     TrashSubCategories = userEntity.TrashSubCategories.Select(x => x.ID).ToList(),
                     Segmentations = userEntity.Segmentations.Select(x => x.ID).ToList(),

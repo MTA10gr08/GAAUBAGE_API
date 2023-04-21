@@ -4,11 +4,11 @@ using API.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Endpoints;
-public static class BackgroundclassifiCationEndpoints
+public static class ImageAnnotationEndpoints
 {
-    public static void MapBackgroundclassifiCationEndpoints(this WebApplication app)
+    public static void MapContextClassificationEndpoints(this WebApplication app)
     {
-        app.MapGet("imageannotations/backgroundclassifications/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("imageannotations/ContextClassifications/next", (DataContext dataContext, ClaimsPrincipal user) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -22,7 +22,7 @@ public static class BackgroundclassifiCationEndpoints
 
             foreach (var imageAnnotation in dataContext
                 .ImageAnnotations
-                .Where(x => !x.BackgroundClassifications.Any(y => y.Users.Any(w => w.ID == userId)))
+                .Where(x => !x.ContextClassifications.Any(y => y.Users.Any(w => w.ID == userId)))
                 .Include(x => x.Image))
             {
                 if (imageAnnotation.IsInProgress)
@@ -56,10 +56,9 @@ public static class BackgroundclassifiCationEndpoints
             };
 
             return Results.Ok(imageAnnotationDTO);
-
         }).Produces<ImageAnnotationDTO>();
 
-        app.MapPost("imageannotations/{id}/backgroundclassifications", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, BackgroundClassificationDTO backgroundClassification) =>
+        app.MapPost("imageannotations/{id}/ContextClassifications", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, ContextClassificationDTO contextClassification) =>
         {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -69,13 +68,11 @@ public static class BackgroundclassifiCationEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
-            var imageAnnotation = dataContext
+            var imageAnnotation = await dataContext
                 .ImageAnnotations
-                .Include(x => x.BackgroundClassifications)
+                .Include(x => x.ContextClassifications)
                 .ThenInclude(x => x.Users)
-                .Include(x => x.BackgroundClassifications)
-                .ThenInclude(x => x.BackgroundClassificationStrings)
-                .FirstOrDefault(x => x.ID == id);
+                .FirstOrDefaultAsync(x => x.ID == id);
 
             if (imageAnnotation == null)
                 return Results.NotFound("ImageAnnotation not found");
@@ -83,25 +80,25 @@ public static class BackgroundclassifiCationEndpoints
             if (imageAnnotation.BackgroundClassifications.Any(x => x.Users.Any(z => z.ID == userID)))
                 return Results.BadRequest("User has already submitted a BackgroundClassification for this image");
 
-            var labels = backgroundClassification.BackgroundClassificationLabels.Order().ToList();
+            var label = contextClassification.ContextClassificationLabel;
 
-            var backgroundclassificationEntitiy = imageAnnotation
-                .BackgroundClassifications
-                .SingleOrDefault(x => x.BackgroundClassificationStrings.Select(x => x.value).SequenceEqual(labels));
+            var contextClassificationEntity = imageAnnotation
+                .ContextClassifications
+                .SingleOrDefault(x => x.ContextClassification == label);
 
             var user = dataContext.Users.Single(x => x.ID == userID);
-            if (backgroundclassificationEntitiy)
+            if (contextClassificationEntity)
             {
-                backgroundclassificationEntitiy.Users.Add(user);
+                contextClassificationEntity.Users.Add(user);
             }
             else
             {
-                backgroundclassificationEntitiy = new BackgroundClassificationEntity
+                contextClassificationEntity = new ContextClassificationEntity
                 {
-                    BackgroundClassificationStrings = labels.ConvertAll(x => new BackgroundClassificationStringEntity { value = x }),
+                    ContextClassification = label,
                     Users = new List<UserEntity> { user }
                 };
-                imageAnnotation.BackgroundClassifications.Add(backgroundclassificationEntitiy);
+                imageAnnotation.ContextClassifications.Add(contextClassificationEntity);
             }
 
             try

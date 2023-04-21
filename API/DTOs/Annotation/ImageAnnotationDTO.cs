@@ -12,7 +12,7 @@ public class ImageAnnotationDTO : BaseDTO
     public Guid? ContextClassificationConsensus;
 
     public ICollection<Guid> SubImages { get; set; }
-    public ICollection<Guid> SubImagesConsensus { get; set; }
+    public Guid? SubImagesConsensus { get; set; }
     public bool IsInProgress;
     public bool IsComplete;
 }
