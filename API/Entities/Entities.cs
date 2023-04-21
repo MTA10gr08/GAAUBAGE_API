@@ -107,7 +107,7 @@ public class SubImageAnnotationGroupEntity : BaseEntity
 {
     public Guid ImageAnnotationID { get; set; }
     public ImageAnnotationEntity ImageAnnotation { get; set; }
-    public ICollection<UserEntity> Users { get; set; }
+    public ICollection<UserEntity> Users { get; set; } = new HashSet<UserEntity>();
     public ICollection<SubImageAnnotationEntity> SubImageAnnotations { get; set; } = new HashSet<SubImageAnnotationEntity>();
 }
 

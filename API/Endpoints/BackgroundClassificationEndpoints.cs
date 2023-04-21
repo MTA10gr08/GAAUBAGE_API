@@ -122,5 +122,25 @@ public static class BackgroundclassifiCationEndpoints
 
             return Results.Ok();
         });
+
+        app.MapGet("imageannotations/backgroundclassifications", (DataContext dataContext) =>
+        {
+            var imageAnnotation = dataContext.BackgroundClassifications;
+
+            if (imageAnnotation == null)
+                return Results.NotFound("ImageAnnotation not found");
+
+            var backgroundClassifications = imageAnnotation.Select(x => new BackgroundClassificationDTO
+            {
+                ID = x.ID,
+                BackgroundClassificationLabels = x.BackgroundClassificationStrings.Select(x => x.value).ToList(),
+                Users = x.Users.Select(x => x.ID).ToList(),
+                ImageAnnotation = x.ImageAnnotation.ID,
+                Updated = x.Updated,
+                Created = x.Created
+            }).ToList();
+
+            return Results.Ok(backgroundClassifications);
+        }).Produces<List<BackgroundClassificationDTO>>();
     }
 }

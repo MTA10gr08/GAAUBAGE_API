@@ -111,9 +111,8 @@ app.MapUserEndpoints();
 app.MapImageEndpoints();
 app.MapContextClassificationEndpoints();
 app.MapBackgroundclassifiCationEndpoints();
-/*app.MapTrashCountEndpoints();
-app.MapTrashBoundingBoxEndpoints();
-app.MapTrashSuperCategoryEndpoints();
+app.MapSubImageEndpoints();
+/*app.MapTrashSuperCategoryEndpoints();
 app.MapTrashCategoryEndpoints();
 app.MapSegmentationEndpoints();*/
 
