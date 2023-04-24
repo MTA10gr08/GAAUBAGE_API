@@ -51,6 +51,6 @@ public static class LeaderboardEndpoints
             };
 
             return Results.Ok(leaderboard);
-        });
+        }).AllowAnonymous();
     }
 }
