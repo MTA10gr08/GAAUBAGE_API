@@ -3,12 +3,12 @@ using System.Security.Claims;
 using API.DTOs.Annotation;
 using API.Entities;
 using Microsoft.EntityFrameworkCore;
-
-public static class TrashSubCategoryEndpoints
+/*
+public static class SegmentationEndpoints
 {
-    public static void MapTrashSubCatagoryEndpoints(this WebApplication app)
+    public static void MapSegmentationEndpoints(this WebApplication app)
     {
-        app.MapGet("imageannotations/trashsubcategories/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("imageannotations/segmentations/next", (DataContext dataContext, ClaimsPrincipal user) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -23,7 +23,7 @@ public static class TrashSubCategoryEndpoints
             foreach (var subImageAnnotation in dataContext
                 .ImageAnnotations
                 .Where(x => x.SubImageAnnotationGroupConsensus != null)
-                .Where(x => !x.SubImageAnnotationGroupConsensus.SubImageAnnotations.Any(y => y.TrashSubCategories.Any(w => w.Users.Any(z => z.ID == userID))))
+                .Where(x => !x.SubImageAnnotationGroupConsensus.SubImageAnnotations.Any(y => y.Segmentations.Any(w => w.UserID == userID)))
                 .SelectMany(x => x.SubImageAnnotationGroupConsensus.SubImageAnnotations))
             {
                 if (subImageAnnotation.IsInProgress)
@@ -61,7 +61,7 @@ public static class TrashSubCategoryEndpoints
             return Results.Ok(subImageAnnotationDTO);
         }).Produces<SubImageAnnotationDTO>();
 
-        app.MapPost("imageannotations/{id}/trashsubcategories", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, TrashSubCategoryDTO trashSubCategory) =>
+        app.MapPost("imageannotations/{id}/segmentations", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, SegmentationDTO segmentation) =>
         {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -73,35 +73,35 @@ public static class TrashSubCategoryEndpoints
 
             var subImageAnnotation = await dataContext
                 .SubImageAnnotations
-                .Include(x => x.TrashSubCategories)
-                .ThenInclude(x => x.Users)
+                .Include(x => x.Segmentations)
+                .ThenInclude(x => x.User)
                 .FirstOrDefaultAsync(x => x.ID == id);
 
             if (subImageAnnotation == null)
                 return Results.NotFound("SubImageAnnotation not found");
 
-            if (subImageAnnotation.TrashSubCategories.Any(x => x.Users.Any(z => z.ID == userID)))
+            if (subImageAnnotation.Segmentations.Any(x => x.UserID == userID))
                 return Results.BadRequest("User has already submitted a BackgroundClassification for this image");
 
-            var label = trashSubCategory.TrashSubCategoryLabel;
+            var label = segmentation.Segmentation;
 
-            var trashSubCategoryEntity = subImageAnnotation
-                .TrashSubCategories
-                .SingleOrDefault(x => x.TrashSubCategory == label);
+            var trashSupercategoryEntity = subImageAnnotation
+                .TrashSuperCategories
+                .SingleOrDefault(x => x.TrashSuperCategory == label);
 
             var user = dataContext.Users.Single(x => x.ID == userID);
-            if (trashSubCategoryEntity)
+            if (trashSupercategoryEntity)
             {
-                trashSubCategoryEntity.Users.Add(user);
+                trashSupercategoryEntity.Users.Add(user);
             }
             else
             {
-                trashSubCategoryEntity = new TrashSubCategoryEntity
+                trashSupercategoryEntity = new SegmentationEntity
                 {
-                    TrashSubCategory = label,
+                    Segmentation = label,
                     Users = new List<UserEntity> { user }
                 };
-                subImageAnnotation.TrashSubCategories.Add(trashSubCategoryEntity);
+                subImageAnnotation.TrashSuperCategories.Add(trashSupercategoryEntity);
             }
 
             try
@@ -123,4 +123,4 @@ public static class TrashSubCategoryEndpoints
             return Results.Ok();
         });
     }
-}
+}*/

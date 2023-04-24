@@ -3,16 +3,16 @@ using Swashbuckle.AspNetCore.Annotations;
 namespace API.DTOs.Annotation;
 public class ImageAnnotationDTO : BaseDTO
 {
-    public Guid ImageID { get; set; }
+    [SwaggerSchema(ReadOnly = true)] public Guid ImageID { get; set; }
 
-    public ICollection<Guid> BackgroundClassifications { get; set; }
-    public Guid? BackgroundClassificationConsensus;
+    [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> BackgroundClassifications { get; set; }
+    [SwaggerSchema(ReadOnly = true)] public Guid? BackgroundClassificationConsensus { get; set; }
 
-    public ICollection<Guid> ContextClassifications { get; set; }
-    public Guid? ContextClassificationConsensus;
+    [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> ContextClassifications { get; set; }
+    [SwaggerSchema(ReadOnly = true)] public Guid? ContextClassificationConsensus { get; set; }
 
-    public ICollection<Guid> SubImages { get; set; }
-    public Guid? SubImagesConsensus { get; set; }
-    public bool IsInProgress;
-    public bool IsComplete;
+    [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> SubImages { get; set; }
+    [SwaggerSchema(ReadOnly = true)] public Guid? SubImagesConsensus { get; set; }
+    [SwaggerSchema(ReadOnly = true)] public bool IsInProgress { get; set; }
+    [SwaggerSchema(ReadOnly = true)] public bool IsComplete { get; set; }
 }

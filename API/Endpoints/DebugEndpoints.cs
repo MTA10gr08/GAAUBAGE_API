@@ -163,9 +163,9 @@ public static class DebugEndpoints
                 while (response.StatusCode == HttpStatusCode.OK)
                 {
                     var responseContent = await response.Content.ReadFromJsonAsync<ImageAnnotationDTO>();
-                    var responseresponse = await client.PostAsJsonAsync($"/imageannotations/{responseContent.ID}/subimages", new SubImageAnnotationDTO
+                    var responseresponse = await client.PostAsJsonAsync($"/imageannotations/{responseContent.ID}/subimages", new SubImageAnnotationGroupDTO
                     {
-                        SubImages = new List<BoundingBoxDTO>
+                        SubImages = new List<SubImageAnnotationDTO>
                         {
                             new ()
                             {

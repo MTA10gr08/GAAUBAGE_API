@@ -4,11 +4,11 @@ using API.DTOs.Annotation;
 using API.Entities;
 using Microsoft.EntityFrameworkCore;
 
-public static class TrashSubCategoryEndpoints
+public static class TrashSuperCategoryEndpoints
 {
-    public static void MapTrashSubCatagoryEndpoints(this WebApplication app)
+    public static void MapTrashSuperCategoryEndpoints(this WebApplication app)
     {
-        app.MapGet("imageannotations/trashsubcategories/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("imageannotations/trashsupercategories/next", (DataContext dataContext, ClaimsPrincipal user) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -23,7 +23,7 @@ public static class TrashSubCategoryEndpoints
             foreach (var subImageAnnotation in dataContext
                 .ImageAnnotations
                 .Where(x => x.SubImageAnnotationGroupConsensus != null)
-                .Where(x => !x.SubImageAnnotationGroupConsensus.SubImageAnnotations.Any(y => y.TrashSubCategories.Any(w => w.Users.Any(z => z.ID == userID))))
+                .Where(x => !x.SubImageAnnotationGroupConsensus.SubImageAnnotations.Any(y => y.TrashSuperCategories.Any(w => w.Users.Any(z => z.ID == userID))))
                 .SelectMany(x => x.SubImageAnnotationGroupConsensus.SubImageAnnotations))
             {
                 if (subImageAnnotation.IsInProgress)
@@ -61,7 +61,7 @@ public static class TrashSubCategoryEndpoints
             return Results.Ok(subImageAnnotationDTO);
         }).Produces<SubImageAnnotationDTO>();
 
-        app.MapPost("imageannotations/{id}/trashsubcategories", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, TrashSubCategoryDTO trashSubCategory) =>
+        app.MapPost("imageannotations/{id}/trashsupercategories", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, TrashSuperCategoryDTO trashSuperCategory) =>
         {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -83,25 +83,25 @@ public static class TrashSubCategoryEndpoints
             if (subImageAnnotation.TrashSubCategories.Any(x => x.Users.Any(z => z.ID == userID)))
                 return Results.BadRequest("User has already submitted a BackgroundClassification for this image");
 
-            var label = trashSubCategory.TrashSubCategoryLabel;
+            var label = trashSuperCategory.TrashSuperCategoryLabel;
 
-            var trashSubCategoryEntity = subImageAnnotation
-                .TrashSubCategories
-                .SingleOrDefault(x => x.TrashSubCategory == label);
+            var trashSupercategoryEntity = subImageAnnotation
+                .TrashSuperCategories
+                .SingleOrDefault(x => x.TrashSuperCategory == label);
 
             var user = dataContext.Users.Single(x => x.ID == userID);
-            if (trashSubCategoryEntity)
+            if (trashSupercategoryEntity)
             {
-                trashSubCategoryEntity.Users.Add(user);
+                trashSupercategoryEntity.Users.Add(user);
             }
             else
             {
-                trashSubCategoryEntity = new TrashSubCategoryEntity
+                trashSupercategoryEntity = new TrashSuperCategoryEntity
                 {
-                    TrashSubCategory = label,
+                    TrashSuperCategory = label,
                     Users = new List<UserEntity> { user }
                 };
-                subImageAnnotation.TrashSubCategories.Add(trashSubCategoryEntity);
+                subImageAnnotation.TrashSuperCategories.Add(trashSupercategoryEntity);
             }
 
             try

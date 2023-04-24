@@ -59,7 +59,7 @@ public static class SubImageEndpoints
             return Results.Ok(imageAnnotationDTO);
         }).Produces<ImageAnnotationDTO>();
 
-        app.MapPost("imageannotations/{id}/subimages", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, SubImageAnnotationDTO subImageAnnotation) =>
+        app.MapPost("imageannotations/{id}/subimages", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, SubImageAnnotationGroupDTO subImageAnnotation) =>
         {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -111,7 +111,7 @@ public static class SubImageEndpoints
         });
     }
 
-    public static double CalculateIOU(BoundingBoxDTO boxA, BoundingBoxDTO boxB)
+    public static double CalculateIOU(SubImageAnnotationDTO boxA, SubImageAnnotationDTO boxB)
     {
         uint x1 = Math.Max(boxA.X, boxB.X);
         uint y1 = Math.Max(boxA.Y, boxB.Y);
@@ -129,7 +129,7 @@ public static class SubImageEndpoints
         return (double)intersectionArea / unionArea;
     }
 
-    private static void FindAndUpdateBestFitGroup(List<SubImageAnnotationGroupEntity> subImageAnnotationGroups, SubImageAnnotationDTO subImageAnnotation, UserEntity currentUser, float iouThreshold)
+    private static void FindAndUpdateBestFitGroup(List<SubImageAnnotationGroupEntity> subImageAnnotationGroups, SubImageAnnotationGroupDTO subImageAnnotation, UserEntity currentUser, float iouThreshold)
     {
         SubImageAnnotationGroupEntity bestFitGroup = null;
         double maxMinIoU = -1;
@@ -137,7 +137,7 @@ public static class SubImageEndpoints
         foreach (var group in subImageAnnotationGroups)
         {
             // Convert SubImageAnnotationDTO to a list of BoundingBoxDTO objects
-            List<BoundingBoxDTO> newBoundingBoxes = subImageAnnotation.SubImages.ToList();
+            List<SubImageAnnotationDTO> newBoundingBoxes = subImageAnnotation.SubImages.ToList();
 
             // Calculate the cost matrix
             int n = group.SubImageAnnotations.Count;
@@ -148,7 +148,7 @@ public static class SubImageEndpoints
             {
                 for (int j = 0; j < m; j++)
                 {
-                    BoundingBoxDTO oldBoxDTO = new() { X = group.SubImageAnnotations.ElementAt(i).X, Y = group.SubImageAnnotations.ElementAt(i).Y, Width = group.SubImageAnnotations.ElementAt(i).Width, Height = group.SubImageAnnotations.ElementAt(i).Height };
+                    SubImageAnnotationDTO oldBoxDTO = new() { X = group.SubImageAnnotations.ElementAt(i).X, Y = group.SubImageAnnotations.ElementAt(i).Y, Width = group.SubImageAnnotations.ElementAt(i).Width, Height = group.SubImageAnnotations.ElementAt(i).Height };
                     double iou = CalculateIOU(oldBoxDTO, newBoundingBoxes[j]);
                     doubleCostMatrix[i, j] = 1 - iou; // Cost is 1 - IOU
                 }
