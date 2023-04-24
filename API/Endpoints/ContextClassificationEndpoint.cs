@@ -4,7 +4,7 @@ using API.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Endpoints;
-public static class ImageAnnotationEndpoints
+public static class ContextClassificationEndpoints
 {
     public static void MapContextClassificationEndpoints(this WebApplication app)
     {
