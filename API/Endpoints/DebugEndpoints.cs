@@ -134,26 +134,56 @@ public static class DebugEndpoints
                 var response = await client.GetAsync("imageannotations/backgroundclassifications/next");
                 while (response.StatusCode == HttpStatusCode.OK)
                 {
-                var responseContent = await response.Content.ReadFromJsonAsync<ImageAnnotationDTO>();
+                    var responseContent = await response.Content.ReadFromJsonAsync<ImageAnnotationDTO>();
                     var responseresponse = await client.PostAsJsonAsync($"/imageannotations/{responseContent.ID}/backgroundclassifications", new BackgroundClassificationDTO
                     {
                         BackgroundClassificationLabels = appSettings.BackgroundCategories.WeightedRandomSubset().ToArray()
                     });
-                response = await client.GetAsync("imageannotations/backgroundclassifications/next");
+                    response = await client.GetAsync("imageannotations/backgroundclassifications/next");
                 }
             }
 
             foreach (var client in clients)
             {
-                var response = await client.GetAsync("imageannotations/ContextClassifications/next");
+                var response = await client.GetAsync("imageannotations/contextclassifications/next");
                 while (response.StatusCode == HttpStatusCode.OK)
                 {
-                var responseContent = await response.Content.ReadFromJsonAsync<ImageAnnotationDTO>();
-                    var responseresponse = await client.PostAsJsonAsync($"/imageannotations/{responseContent.ID}/ContextClassifications", new ContextClassificationDTO
+                    var responseContent = await response.Content.ReadFromJsonAsync<ImageAnnotationDTO>();
+                    var responseresponse = await client.PostAsJsonAsync($"/imageannotations/{responseContent.ID}/contextclassifications", new ContextClassificationDTO
                     {
                         ContextClassificationLabel = appSettings.ContextCategories.WeightedRandom()
                     });
-                response = await client.GetAsync("imageannotations/ContextClassifications/next");
+                    response = await client.GetAsync("imageannotations/contextclassifications/next");
+                }
+            }
+
+            foreach (var client in clients)
+            {
+                var response = await client.GetAsync("imageannotations/subimages/next");
+                while (response.StatusCode == HttpStatusCode.OK)
+                {
+                    var responseContent = await response.Content.ReadFromJsonAsync<ImageAnnotationDTO>();
+                    var responseresponse = await client.PostAsJsonAsync($"/imageannotations/{responseContent.ID}/subimages", new SubImageAnnotationDTO
+                    {
+                        SubImages = new List<BoundingBoxDTO>
+                        {
+                            new ()
+                            {
+                                    X = 50,
+                                    Y = 50,
+                                    Width = 50,
+                                    Height = 50
+                            },
+                            new ()
+                            {
+                                    X = 200,
+                                    Y = 200,
+                                    Width = 50,
+                                    Height = 50
+                            }
+                        }
+                    });
+                    response = await client.GetAsync("imageannotations/subimages/next");
                 }
             }
 

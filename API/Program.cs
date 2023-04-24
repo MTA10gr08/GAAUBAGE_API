@@ -112,6 +112,7 @@ app.MapImageEndpoints();
 app.MapContextClassificationEndpoints();
 app.MapBackgroundclassifiCationEndpoints();
 app.MapSubImageEndpoints();
+app.MapLeaderboardEndpoints();
 /*app.MapTrashSuperCategoryEndpoints();
 app.MapTrashCategoryEndpoints();
 app.MapSegmentationEndpoints();*/

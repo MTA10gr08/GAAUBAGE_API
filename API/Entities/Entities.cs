@@ -122,8 +122,31 @@ public class SubImageAnnotationEntity : BaseEntity
     public SubImageAnnotationGroupEntity SubImageAnnotationGroup { get; set; }
 
     public ICollection<TrashSuperCategoryEntity> TrashSuperCategories { get; set; } = new HashSet<TrashSuperCategoryEntity>();
+    public TrashSuperCategoryEntity? TrashSuperCategoriesConsensus
+    {
+        get
+        {
+            int total = TrashSuperCategories.Count;
+            double threshold = total * 0.75;
+            return TrashSuperCategories.FirstOrDefault(x => x.Users.Count >= threshold);
+        }
+    }
     public ICollection<TrashSubCategoryEntity> TrashSubCategories { get; set; } = new HashSet<TrashSubCategoryEntity>();
+    public TrashSubCategoryEntity? TrashSubCategoriesConsensus
+    {
+        get
+        {
+            int total = TrashSubCategories.Count;
+            double threshold = total * 0.75;
+            return TrashSubCategories.FirstOrDefault(x => x.Users.Count >= threshold);
+        }
+    }
+
     public ICollection<SegmentationEntity> Segmentations { get; set; } = new HashSet<SegmentationEntity>();
+
+    public bool IsInProgress => !(TrashSuperCategoriesConsensus && TrashSubCategoriesConsensus)
+        && (TrashSuperCategories.Any() || TrashSubCategories.Any());
+    public bool IsComplete => TrashSuperCategoriesConsensus && TrashSubCategoriesConsensus;
 }
 
 public class TrashSuperCategoryEntity : BaseEntity
