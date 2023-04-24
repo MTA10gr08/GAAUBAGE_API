@@ -68,6 +68,10 @@ public static class ContextClassificationEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
+            var user = dataContext.Users.SingleOrDefault(x => x.ID == userID);
+            if  (user == null)
+                return Results.BadRequest("User not found");
+
             var imageAnnotation = await dataContext
                 .ImageAnnotations
                 .Include(x => x.ContextClassifications)
@@ -86,7 +90,6 @@ public static class ContextClassificationEndpoints
                 .ContextClassifications
                 .SingleOrDefault(x => x.ContextClassification == label);
 
-            var user = dataContext.Users.Single(x => x.ID == userID);
             if (contextClassificationEntity)
             {
                 contextClassificationEntity.Users.Add(user);

@@ -69,6 +69,10 @@ public static class BackgroundclassifiCationEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
+            var user = dataContext.Users.SingleOrDefault(x => x.ID == userID);
+            if  (user == null)
+                return Results.BadRequest("User not found");
+
             var imageAnnotation = dataContext
                 .ImageAnnotations
                 .Include(x => x.BackgroundClassifications)
@@ -83,13 +87,12 @@ public static class BackgroundclassifiCationEndpoints
             if (imageAnnotation.BackgroundClassifications.Any(x => x.Users.Any(z => z.ID == userID)))
                 return Results.BadRequest("User has already submitted a BackgroundClassification for this image");
 
-            var labels = backgroundClassification.BackgroundClassificationLabels.Order().ToList();
+            var labels = backgroundClassification.BackgroundClassificationLabels.OrderBy(x => x).ToList();
 
             var backgroundclassificationEntitiy = imageAnnotation
                 .BackgroundClassifications
                 .SingleOrDefault(x => x.BackgroundClassificationStrings.Select(x => x.value).SequenceEqual(labels));
 
-            var user = dataContext.Users.Single(x => x.ID == userID);
             if (backgroundclassificationEntitiy)
             {
                 backgroundclassificationEntitiy.Users.Add(user);

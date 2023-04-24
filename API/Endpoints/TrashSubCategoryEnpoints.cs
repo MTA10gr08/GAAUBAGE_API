@@ -71,6 +71,10 @@ public static class TrashSubCategoryEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
+            var user = dataContext.Users.SingleOrDefault(x => x.ID == userID);
+            if  (user == null)
+                return Results.BadRequest("User not found");
+
             var subImageAnnotation = await dataContext
                 .SubImageAnnotations
                 .Include(x => x.TrashSubCategories)
@@ -89,7 +93,6 @@ public static class TrashSubCategoryEndpoints
                 .TrashSubCategories
                 .SingleOrDefault(x => x.TrashSubCategory == label);
 
-            var user = dataContext.Users.Single(x => x.ID == userID);
             if (trashSubCategoryEntity)
             {
                 trashSubCategoryEntity.Users.Add(user);

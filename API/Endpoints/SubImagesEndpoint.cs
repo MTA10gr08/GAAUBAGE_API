@@ -69,6 +69,10 @@ public static class SubImageEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
+            var user = dataContext.Users.SingleOrDefault(x => x.ID == userID);
+            if  (user == null)
+                return Results.BadRequest("User not found");
+
             var imageAnnotation = await dataContext
                 .ImageAnnotations
                 .Include(x => x.SubImageAnnotationGroups)
@@ -86,8 +90,6 @@ public static class SubImageEndpoints
             var subImageAnnotationGroupsEntity = imageAnnotation
                     .SubImageAnnotationGroups
                     .Where(x => x.SubImageAnnotations.Count == count).ToList();
-
-            var user = dataContext.Users.Single(x => x.ID == userID);
 
             FindAndUpdateBestFitGroup(subImageAnnotationGroupsEntity, subImageAnnotation, user, 0.5f);
 
