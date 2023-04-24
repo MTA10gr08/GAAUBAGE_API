@@ -128,7 +128,7 @@ public static class DebugEndpoints
             {
                 await clients[rng.Next(0, clients.Count)].PostAsJsonAsync("/images", image);
             }
-            /*
+
             foreach (var client in clients)
             {
                 var response = await client.GetAsync("imageannotations/backgroundclassifications/next");
@@ -157,6 +157,7 @@ public static class DebugEndpoints
                 }
             }
 
+            /*
             foreach (var client in clients)
             {
                 var response = await client.GetAsync("imageannotations/subimages/next");

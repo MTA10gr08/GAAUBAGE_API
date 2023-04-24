@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using API.DTOs.Gamification;
 using API.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Endpoints;
 public static class LeaderboardEndpoints
@@ -19,6 +20,13 @@ public static class LeaderboardEndpoints
 
             // Sort the users by their scores in descending order
             var sortedUsers = dataContext.Users
+                .Include(x => x.BackgroundClassifications)
+                .Include(x => x.ContextClassifications)
+                .Include(x => x.SubImageAnnotationGroups)
+                .Include(x => x.TrashSubCategories)
+                .Include(x => x.TrashSuperCategories)
+                .Include(x => x.Segmentations)
+                .AsEnumerable()
                 .Select(x => new
                 {
                     x.ID,
@@ -29,7 +37,7 @@ public static class LeaderboardEndpoints
                 .ToList();
 
             // Find the position of the current user in the sorted list
-            int currentUserSpot = sortedUsers.FindIndex(x => x.ID == userId) + 1;
+            int currentUserSpot = sortedUsers.FindIndex(x => x.ID == userId);
 
             // Create the LeaderboardDTO object with the correct position and entries
             var leaderboard = new LeaderboardDTO()
