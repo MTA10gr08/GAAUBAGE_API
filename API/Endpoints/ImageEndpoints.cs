@@ -41,8 +41,8 @@ public static class ImageEndpoints
                 {
                     ID = imageEntity.ID,
                     URI = imageEntity.URI,
-                    UserID = imageEntity.UserID,
-                    ImageAnnotationID = imageEntity.ImageAnnotationID,
+                    User = imageEntity.UserID,
+                    ImageAnnotation = imageEntity.ImageAnnotationID,
                 };
                 return Results.Ok(imageDTO);
             }
@@ -56,7 +56,7 @@ public static class ImageEndpoints
             {
                 ID = x.ID,
                 URI = x.URI,
-                UserID = x.UserID,
+                User = x.UserID,
             });
 
             return Results.Ok(imageDTOs);

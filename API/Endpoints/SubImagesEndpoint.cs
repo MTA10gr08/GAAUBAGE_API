@@ -45,7 +45,7 @@ public static class SubImageEndpoints
             var imageAnnotationDTO = new ImageAnnotationDTO
             {
                 ID = nextImageAnnotation.ID,
-                ImageID = nextImageAnnotation.Image.ID,
+                Image = nextImageAnnotation.Image.ID,
                 BackgroundClassifications = nextImageAnnotation.BackgroundClassifications.Select(x => x.ID).ToList(),
                 BackgroundClassificationConsensus = nextImageAnnotation.BackgroundClassificationConsensus?.ID,
                 ContextClassifications = nextImageAnnotation.ContextClassifications.Select(x => x.ID).ToList(),
