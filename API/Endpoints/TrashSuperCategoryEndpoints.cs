@@ -8,7 +8,7 @@ public static class TrashSuperCategoryEndpoints
 {
     public static void MapTrashSuperCategoryEndpoints(this WebApplication app)
     {
-        app.MapGet("imageannotations/trashsupercategories/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("/imageannotations/trashsupercategories/next", (DataContext dataContext, ClaimsPrincipal user) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 

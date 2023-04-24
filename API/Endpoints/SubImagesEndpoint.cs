@@ -9,7 +9,7 @@ public static class SubImageEndpoints
 {
     public static void MapSubImageEndpoints(this WebApplication app)
     {
-        app.MapGet("imageannotations/subimages/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("/imageannotations/subimages/next", (DataContext dataContext, ClaimsPrincipal user) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 

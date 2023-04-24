@@ -8,7 +8,7 @@ public static class BackgroundclassifiCationEndpoints
 {
     public static void MapBackgroundclassifiCationEndpoints(this WebApplication app)
     {
-        app.MapGet("imageannotations/backgroundclassifications/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("/imageannotations/backgroundclassifications/next", (DataContext dataContext, ClaimsPrincipal user) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 

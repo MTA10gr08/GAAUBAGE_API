@@ -112,10 +112,9 @@ app.MapImageEndpoints();
 app.MapContextClassificationEndpoints();
 app.MapBackgroundclassifiCationEndpoints();
 app.MapSubImageEndpoints();
+app.MapTrashSubCatagoryEndpoints();
+app.MapTrashSuperCategoryEndpoints();
 app.MapLeaderboardEndpoints();
-/*app.MapTrashSuperCategoryEndpoints();
-app.MapTrashCategoryEndpoints();
-app.MapSegmentationEndpoints();*/
 
 if (builder.Environment.IsDevelopment())
 {

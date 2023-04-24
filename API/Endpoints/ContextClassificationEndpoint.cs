@@ -8,7 +8,7 @@ public static class ImageAnnotationEndpoints
 {
     public static void MapContextClassificationEndpoints(this WebApplication app)
     {
-        app.MapGet("imageannotations/contextclassifications/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("/imageannotations/contextclassifications/next", (DataContext dataContext, ClaimsPrincipal user) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
