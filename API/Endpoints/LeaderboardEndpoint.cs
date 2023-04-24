@@ -23,7 +23,7 @@ public static class LeaderboardEndpoints
                 {
                     x.ID,
                     x.Alias,
-                    Score = 0 // Replace with the correct score calculation
+                    x.Score
                 })
                 .OrderByDescending(x => x.Score)
                 .ToList();
@@ -34,7 +34,7 @@ public static class LeaderboardEndpoints
             // Create the LeaderboardDTO object with the correct position and entries
             var leaderboard = new LeaderboardDTO()
             {
-                CurrentUserSpot = currentUserSpot,
+                CurrentUserSpot = (uint)currentUserSpot,
                 Entries = sortedUsers.ConvertAll(x => new LeaderboardDTO.Entry()
                 {
                     Alias = x.Alias,
