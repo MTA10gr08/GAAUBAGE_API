@@ -2,7 +2,7 @@ using API.DTOs.Annotation;
 using Microsoft.Extensions.Options;
 
 namespace API.Endpoints;
-public static partial class ConfigurationEndpoints
+public static class ConfigurationEndpoints
 {
     public static void MapConfigurationEndpoints(this WebApplication app)
     {

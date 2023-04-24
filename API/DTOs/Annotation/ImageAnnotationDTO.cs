@@ -3,7 +3,7 @@ using Swashbuckle.AspNetCore.Annotations;
 namespace API.DTOs.Annotation;
 public class ImageAnnotationDTO : BaseDTO
 {
-    [SwaggerSchema(ReadOnly = true)] public Guid ImageID { get; set; }
+    [SwaggerSchema(ReadOnly = true)] public Guid Image { get; set; }
 
     [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> BackgroundClassifications { get; set; }
     [SwaggerSchema(ReadOnly = true)] public Guid? BackgroundClassificationConsensus { get; set; }

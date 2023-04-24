@@ -23,6 +23,20 @@ public class UserEntity : BaseEntity
     public ICollection<TrashSuperCategoryEntity> TrashSuperCategories { get; set; } = new HashSet<TrashSuperCategoryEntity>();
     public ICollection<TrashSubCategoryEntity> TrashSubCategories { get; set; } = new HashSet<TrashSubCategoryEntity>();
     public ICollection<SegmentationEntity> Segmentations { get; set; } = new HashSet<SegmentationEntity>();
+    public uint Score
+    {
+        get
+        {
+            return (uint)((BackgroundClassifications.Count * 1) + (SubImageAnnotationGroups.Count * 2) + (TrashSubCategories.Count * 3) + (Segmentations.Count * 4));
+        }
+    }
+    public uint Level
+    {
+        get
+        {
+            return (uint)(Score / 10f);
+        }
+    }
 }
 
 public class ImageEntity : BaseEntity

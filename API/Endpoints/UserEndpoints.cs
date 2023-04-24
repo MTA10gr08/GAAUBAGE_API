@@ -8,7 +8,7 @@ public static class UserEndpoints
     {
         app.MapPost("/users", (UserDTO user, DataContext dataContext, TokenProvider tokenProvider) =>
         {
-            var createdUser = dataContext.Users.Add(new UserEntity { Alias = user.Alias, Tag = user.Tag }).Entity;
+            var createdUser = dataContext.Users.Add(new UserEntity { Alias = user.Alias, Tag = dataContext.Users.Count() % 2 == 0 ? "Narr" : "Blap" }).Entity;
             dataContext.SaveChanges();
             return Results.Ok(tokenProvider.GenerateToken(createdUser.ID, Role.User, DateTime.Now.AddYears(1)));
         }).Produces<string>();
