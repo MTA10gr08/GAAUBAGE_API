@@ -59,6 +59,39 @@ public static class SubImageEndpoints
             return Results.Ok(imageAnnotationDTO);
         }).Produces<ImageAnnotationDTO>();
 
+
+        app.MapGet("imageannotations/subimages", (DataContext dataContext) =>
+        {
+            var subImageAnnotations = dataContext.SubImageAnnotations.Select(x => new SubImageAnnotationDTO
+            {
+                X = x.X,
+                Y = x.Y,
+                Width = x.Width,
+                Height = x.Height,
+                SubImageAnnotationGroup = x.SubImageAnnotationGroupID,
+                TrashSuperCategories = x.TrashSuperCategories.Select(y => y.ID).ToList(),
+                TrashSuperCategoriesConsensus = x.TrashSuperCategoriesConsensus.ID,
+                TrashSubCategories = x.TrashSubCategories.Select(y => y.ID).ToList(),
+                TrashSubCategoriesConsensus = x.TrashSubCategoriesConsensus.ID,
+                Segmentations = x.Segmentations.Select(y => y.ID).ToList(),
+                IsComplete = x.IsComplete,
+                IsInProgress = x.IsInProgress,
+            }).ToList();
+            return Results.Ok(subImageAnnotations);
+        }).Produces<List<SubImageAnnotationDTO>>();
+
+        app.MapGet("imageannotations/subimagegroups", (DataContext dataContext) =>
+        {
+            var subImageAnnotations = dataContext.SubImageGroups.Select(x => new SubImageAnnotationGroupDTO
+            {
+                Users = x.Users.Select(y => y.ID).ToList(),
+                SubImageAnnotations = x.SubImageAnnotations.Select(y => y.ID).ToList(),
+                ImageAnnotation = x.ImageAnnotationID,
+            }).ToList();
+            return Results.Ok(subImageAnnotations);
+        }).Produces<List<SubImageAnnotationGroupDTO>>();
+
+
         app.MapPost("imageannotations/{id}/subimages", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, SubImageAnnotationGroupDTO subImageAnnotation) =>
         {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
@@ -70,13 +103,15 @@ public static class SubImageEndpoints
                 return Results.BadRequest("Invalid user ID format");
 
             var user = dataContext.Users.SingleOrDefault(x => x.ID == userID);
-            if  (user == null)
+            if (user == null)
                 return Results.BadRequest("User not found");
 
             var imageAnnotation = await dataContext
                 .ImageAnnotations
                 .Include(x => x.SubImageAnnotationGroups)
                 .ThenInclude(x => x.Users)
+                .Include(x => x.SubImageAnnotationGroups)
+                .ThenInclude(x => x.SubImageAnnotations)
                 .FirstOrDefaultAsync(x => x.ID == id);
 
             if (imageAnnotation == null)
@@ -85,13 +120,13 @@ public static class SubImageEndpoints
             if (imageAnnotation.BackgroundClassifications.Any(x => x.Users.Any(z => z.ID == userID)))
                 return Results.BadRequest("User has already submitted a BackgroundClassification for this image");
 
-            var count = subImageAnnotation.SubImages.Count;
+            FindAndUpdateBestFitGroup(ref imageAnnotation, ref subImageAnnotation, ref user, 0.5f);
 
-            var subImageAnnotationGroupsEntity = imageAnnotation
-                    .SubImageAnnotationGroups
-                    .Where(x => x.SubImageAnnotations.Count == count).ToList();
-
-            FindAndUpdateBestFitGroup(subImageAnnotationGroupsEntity, subImageAnnotation, user, 0.5f);
+            /*imageAnnotation.SubImageAnnotationGroups.Add(new SubImageAnnotationGroupEntity{
+                ImageAnnotationID = imageAnnotation.ID,
+                Users = new List<UserEntity>{user},
+                SubImageAnnotations = subImageAnnotation.SubImages.Select(x => new SubImageAnnotationEntity{X = x.X, Y = x.Y, Width = x.Width, Height = x.Height}).ToList(),
+            });*/
 
             try
             {
@@ -131,14 +166,21 @@ public static class SubImageEndpoints
         return (double)intersectionArea / unionArea;
     }
 
-    private static void FindAndUpdateBestFitGroup(List<SubImageAnnotationGroupEntity> subImageAnnotationGroups, SubImageAnnotationGroupDTO subImageAnnotation, UserEntity currentUser, float iouThreshold)
+    private static void FindAndUpdateBestFitGroup(ref ImageAnnotationEntity imageAnnotation, ref SubImageAnnotationGroupDTO subImageAnnotation, ref UserEntity user, float iouThreshold)
     {
+        var count = subImageAnnotation.SubImages.Count;
+
+        var subImageAnnotationGroups = imageAnnotation
+                .SubImageAnnotationGroups
+                .Where(x => x.SubImageAnnotations.Count == count).ToList();
+
         SubImageAnnotationGroupEntity bestFitGroup = null;
         double maxMinIoU = -1;
+        int[] bestAssignment = null;
 
         foreach (var group in subImageAnnotationGroups)
         {
-            // Convert SubImageAnnotationDTO to a list of BoundingBoxDTO objects
+            // Convert SubImageAnnotationGroupDTO to a list of SubImageAnnotationDTO objects
             List<SubImageAnnotationDTO> newBoundingBoxes = subImageAnnotation.SubImages.ToList();
 
             // Calculate the cost matrix
@@ -185,56 +227,39 @@ public static class SubImageEndpoints
             {
                 maxMinIoU = minIoU;
                 bestFitGroup = group;
-
-                // Update the average bounding boxes for the best fit group
-                int newUserCount = group.Users.Count + 1;
-                for (int i = 0; i < n; i++)
-                {
-                    var oldBox = group.SubImageAnnotations.ElementAt(i);
-                    var newBox = newBoundingBoxes[assignment[i]];
-
-                    oldBox.X = (uint)((oldBox.X * (newUserCount - 1) + newBox.X) / newUserCount);
-                    oldBox.Y = (uint)((oldBox.Y * (newUserCount - 1) + newBox.Y) / newUserCount);
-                    oldBox.Width = (uint)((oldBox.Width * (newUserCount - 1) + newBox.Width) / newUserCount);
-                    oldBox.Height = (uint)((oldBox.Height * (newUserCount - 1) + newBox.Height) / newUserCount);
-                }
-
-                // Update the Users collection if necessary
-                if (!group.Users.Contains(currentUser))
-                {
-                    group.Users.Add(currentUser);
-                }
+                bestAssignment = assignment;
             }
         }
 
         if (bestFitGroup != null)
         {
-            // Update the bestFitGroup's SubImageAnnotations and Users
-            bestFitGroup.SubImageAnnotations = subImageAnnotation.SubImages.Select(x => new SubImageAnnotationEntity()
+            // Update the average bounding boxes for the best fit group
+            int newUserCount = bestFitGroup.Users.Count + 1;
+            for (int i = 0; i < bestFitGroup.SubImageAnnotations.Count; i++)
             {
-                X = x.X,
-                Y = x.Y,
-                Width = x.Width,
-                Height = x.Height
-            }).ToList();
-            bestFitGroup.Users.Add(currentUser);
+                var oldBox = bestFitGroup.SubImageAnnotations.ElementAt(i);
+                var newBox = subImageAnnotation.SubImages.ToList()[bestAssignment[i]];
+
+                oldBox.X = (uint)((oldBox.X * (newUserCount - 1) + newBox.X) / newUserCount);
+                oldBox.Y = (uint)((oldBox.Y * (newUserCount - 1) + newBox.Y) / newUserCount);
+                oldBox.Width = (uint)((oldBox.Width * (newUserCount - 1) + newBox.Width) / newUserCount);
+                oldBox.Height = (uint)((oldBox.Height * (newUserCount - 1) + newBox.Height) / newUserCount);
+            }
+
+            // Update the Users collection if necessary
+            if (!bestFitGroup.Users.Contains(user))
+            {
+                bestFitGroup.Users.Add(user);
+            }
         }
         else
         {
-            // Create a new SubImageAnnotationGroupEntity if no suitable group is found
-            SubImageAnnotationGroupEntity newGroup = new SubImageAnnotationGroupEntity()
+            imageAnnotation.SubImageAnnotationGroups.Add(new SubImageAnnotationGroupEntity
             {
-                SubImageAnnotations = subImageAnnotation.SubImages.Select(x => new SubImageAnnotationEntity()
-                {
-                    X = x.X,
-                    Y = x.Y,
-                    Width = x.Width,
-                    Height = x.Height
-                }).ToList(),
-                Users = new List<UserEntity>() { currentUser }
-            };
-            // Add the new group to the subImageAnnotationGroups list
-            subImageAnnotationGroups.Add(newGroup);
+                ImageAnnotationID = imageAnnotation.ID,
+                Users = new List<UserEntity> { user },
+                SubImageAnnotations = subImageAnnotation.SubImages.Select(x => new SubImageAnnotationEntity { X = x.X, Y = x.Y, Width = x.Width, Height = x.Height }).ToList(),
+            });
         }
     }
 }

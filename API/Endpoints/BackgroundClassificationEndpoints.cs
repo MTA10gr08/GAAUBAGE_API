@@ -130,9 +130,6 @@ public static class BackgroundclassifiCationEndpoints
         {
             var imageAnnotation = dataContext.BackgroundClassifications;
 
-            if (imageAnnotation == null)
-                return Results.NotFound("ImageAnnotation not found");
-
             var backgroundClassifications = imageAnnotation.Select(x => new BackgroundClassificationDTO
             {
                 ID = x.ID,

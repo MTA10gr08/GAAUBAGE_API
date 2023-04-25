@@ -7,6 +7,8 @@ public class UserDTO : BaseDTO
 {
     [Required] public string Alias { get; set; } = string.Empty;
     [BindProperty(SupportsGet = false)] public string Tag { get; set; } = string.Empty;
+    [SwaggerSchema(ReadOnly = true)] public uint Score { get; set; }
+    [SwaggerSchema(ReadOnly = true)] public uint Level { get; set; }
     [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> Images { get; set; } = new List<Guid>();
     [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> BackgroundClassificationLabels { get; set; } = new List<Guid>();
     [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> ContextClassifications { get; set; } = new List<Guid>();

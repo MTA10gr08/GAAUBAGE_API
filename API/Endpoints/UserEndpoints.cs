@@ -30,6 +30,8 @@ public static class UserEndpoints
                     ID = userEntity.ID,
                     Alias = userEntity.Alias,
                     Tag = userEntity.Tag,
+                    Score = userEntity.Score,
+                    Level = userEntity.Level,
                     Images = userEntity.Images.Select(x => x.ID).ToList(),
                     BackgroundClassificationLabels = userEntity.BackgroundClassifications.Select(x => x.ID).ToList(),
                     ContextClassifications = userEntity.ContextClassifications.Select(x => x.ID).ToList(),
