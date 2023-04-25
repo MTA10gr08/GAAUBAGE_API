@@ -85,7 +85,21 @@ public static class SubImageEndpoints
             var subImageAnnotations = dataContext.SubImageGroups.Select(x => new SubImageAnnotationGroupDTO
             {
                 Users = x.Users.Select(y => y.ID).ToList(),
-                SubImageAnnotations = x.SubImageAnnotations.Select(y => y.ID).ToList(),
+                SubImageAnnotations = x.SubImageAnnotations.Select(y => new SubImageAnnotationDTO
+                {
+                    X = y.X,
+                    Y = y.Y,
+                    Width = y.Width,
+                    Height = y.Height,
+                    SubImageAnnotationGroup = y.SubImageAnnotationGroupID,
+                    TrashSuperCategories = y.TrashSuperCategories.Select(z => z.ID).ToList(),
+                    TrashSuperCategoriesConsensus = y.TrashSuperCategoriesConsensus.ID,
+                    TrashSubCategories = y.TrashSubCategories.Select(z => z.ID).ToList(),
+                    TrashSubCategoriesConsensus = y.TrashSubCategoriesConsensus.ID,
+                    Segmentations = y.Segmentations.Select(z => z.ID).ToList(),
+                    IsComplete = y.IsComplete,
+                    IsInProgress = y.IsInProgress,
+                }).ToList(),
                 ImageAnnotation = x.ImageAnnotationID,
             }).ToList();
             return Results.Ok(subImageAnnotations);
@@ -168,7 +182,7 @@ public static class SubImageEndpoints
 
     private static void FindAndUpdateBestFitGroup(ref ImageAnnotationEntity imageAnnotation, ref SubImageAnnotationGroupDTO subImageAnnotation, ref UserEntity user, float iouThreshold)
     {
-        var count = subImageAnnotation.SubImages.Count;
+        var count = subImageAnnotation.SubImageAnnotations.Count;
 
         var subImageAnnotationGroups = imageAnnotation
                 .SubImageAnnotationGroups
@@ -181,7 +195,7 @@ public static class SubImageEndpoints
         foreach (var group in subImageAnnotationGroups)
         {
             // Convert SubImageAnnotationGroupDTO to a list of SubImageAnnotationDTO objects
-            List<SubImageAnnotationDTO> newBoundingBoxes = subImageAnnotation.SubImages.ToList();
+            List<SubImageAnnotationDTO> newBoundingBoxes = subImageAnnotation.SubImageAnnotations.ToList();
 
             // Calculate the cost matrix
             int n = group.SubImageAnnotations.Count;
@@ -238,7 +252,7 @@ public static class SubImageEndpoints
             for (int i = 0; i < bestFitGroup.SubImageAnnotations.Count; i++)
             {
                 var oldBox = bestFitGroup.SubImageAnnotations.ElementAt(i);
-                var newBox = subImageAnnotation.SubImages.ToList()[bestAssignment[i]];
+                var newBox = subImageAnnotation.SubImageAnnotations.ToList()[bestAssignment[i]];
 
                 oldBox.X = (uint)((oldBox.X * (newUserCount - 1) + newBox.X) / newUserCount);
                 oldBox.Y = (uint)((oldBox.Y * (newUserCount - 1) + newBox.Y) / newUserCount);
@@ -258,7 +272,7 @@ public static class SubImageEndpoints
             {
                 ImageAnnotationID = imageAnnotation.ID,
                 Users = new List<UserEntity> { user },
-                SubImageAnnotations = subImageAnnotation.SubImages.Select(x => new SubImageAnnotationEntity { X = x.X, Y = x.Y, Width = x.Width, Height = x.Height }).ToList(),
+                SubImageAnnotations = subImageAnnotation.SubImageAnnotations.Select(x => new SubImageAnnotationEntity { X = x.X, Y = x.Y, Width = x.Width, Height = x.Height }).ToList(),
             });
         }
     }
