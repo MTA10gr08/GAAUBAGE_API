@@ -21,10 +21,13 @@ public static class TrashSubCategoryEndpoints
             SubImageAnnotationEntity? nextSubImageAnnotation = null;
 
             foreach (var subImageAnnotation in dataContext
-                .ImageAnnotations
-                .Where(x => x.SubImageAnnotationGroupConsensus != null)
-                .Where(x => !x.SubImageAnnotationGroupConsensus.SubImageAnnotations.Any(y => y.TrashSubCategories.Any(w => w.Users.Any(z => z.ID == userID))))
-                .SelectMany(x => x.SubImageAnnotationGroupConsensus.SubImageAnnotations))
+                .SubImageAnnotations
+                .Include(x => x.SubImageAnnotationGroup)
+                .ThenInclude(x => x.ImageAnnotation)
+                .ThenInclude(x => x.SubImageAnnotationGroups)
+                .ThenInclude(x => x.Users)
+                .AsEnumerable()
+                .Where(x => x.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == x.SubImageAnnotationGroup))
             {
                 if (subImageAnnotation.IsInProgress)
                 {
@@ -72,7 +75,7 @@ public static class TrashSubCategoryEndpoints
                 return Results.BadRequest("Invalid user ID format");
 
             var user = dataContext.Users.SingleOrDefault(x => x.ID == userID);
-            if  (user == null)
+            if (user == null)
                 return Results.BadRequest("User not found");
 
             var subImageAnnotation = await dataContext

@@ -132,8 +132,8 @@ public class SubImageAnnotationEntity : BaseEntity
     public uint Width { get; set; }
     public uint Height { get; set; }
 
-    public Guid SubImageAnnotationGroupID { get; set; }
-    public SubImageAnnotationGroupEntity SubImageAnnotationGroup { get; set; }
+    public Guid SubImageAnnotationGroupID { get; set; } 
+    public SubImageAnnotationGroupEntity SubImageAnnotationGroup { get; set; } = null!;
 
     public ICollection<TrashSuperCategoryEntity> TrashSuperCategories { get; set; } = new HashSet<TrashSuperCategoryEntity>();
     public TrashSuperCategoryEntity? TrashSuperCategoriesConsensus

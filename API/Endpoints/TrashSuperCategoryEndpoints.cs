@@ -21,10 +21,13 @@ public static class TrashSuperCategoryEndpoints
             SubImageAnnotationEntity? nextSubImageAnnotation = null;
 
             foreach (var subImageAnnotation in dataContext
-                .ImageAnnotations
-                .Where(x => x.SubImageAnnotationGroupConsensus != null)
-                .Where(x => !x.SubImageAnnotationGroupConsensus.SubImageAnnotations.Any(y => y.TrashSuperCategories.Any(w => w.Users.Any(z => z.ID == userID))))
-                .SelectMany(x => x.SubImageAnnotationGroupConsensus.SubImageAnnotations))
+                .SubImageAnnotations
+                .Include(x => x.SubImageAnnotationGroup)
+                .ThenInclude(x => x.ImageAnnotation)
+                .ThenInclude(x => x.SubImageAnnotationGroups)
+                .ThenInclude(x => x.Users)
+                .AsEnumerable()
+                .Where(x => x.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == x.SubImageAnnotationGroup))
             {
                 if (subImageAnnotation.IsInProgress)
                 {
