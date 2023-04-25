@@ -8,6 +8,8 @@ public class SubImageAnnotationDTO : BaseDTO
     public uint Width { get; set; }
     public uint Height { get; set; }
 
+    [SwaggerSchema(ReadOnly = true)] public Guid Image { get; set; }
+
     [SwaggerSchema(ReadOnly = true)] public Guid? SubImageAnnotationGroup { get; set; }
 
     [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> TrashSuperCategories { get; set; } = new HashSet<Guid>();

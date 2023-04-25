@@ -44,6 +44,8 @@ public static class ContextClassificationEndpoints
             var imageAnnotationDTO = new ImageAnnotationDTO
             {
                 ID = nextImageAnnotation.ID,
+                Created = nextImageAnnotation.Created,
+                Updated = nextImageAnnotation.Updated,
                 Image = nextImageAnnotation.Image.ID,
                 BackgroundClassifications = nextImageAnnotation.BackgroundClassifications.Select(x => x.ID).ToList(),
                 BackgroundClassificationConsensus = nextImageAnnotation.BackgroundClassificationConsensus?.ID,

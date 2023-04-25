@@ -47,6 +47,9 @@ public static class TrashSubCategoryEndpoints
 
             var subImageAnnotationDTO = new SubImageAnnotationDTO
             {
+                ID = nextSubImageAnnotation.ID,
+                Created = nextSubImageAnnotation.Created,
+                Updated = nextSubImageAnnotation.Updated,
                 X = nextSubImageAnnotation.X,
                 Y = nextSubImageAnnotation.Y,
                 Width = nextSubImageAnnotation.Width,

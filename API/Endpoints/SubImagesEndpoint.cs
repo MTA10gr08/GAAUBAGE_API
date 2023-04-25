@@ -45,6 +45,8 @@ public static class SubImageEndpoints
             var imageAnnotationDTO = new ImageAnnotationDTO
             {
                 ID = nextImageAnnotation.ID,
+                Created = nextImageAnnotation.Created,
+                Updated = nextImageAnnotation.Updated,
                 Image = nextImageAnnotation.Image.ID,
                 BackgroundClassifications = nextImageAnnotation.BackgroundClassifications.Select(x => x.ID).ToList(),
                 BackgroundClassificationConsensus = nextImageAnnotation.BackgroundClassificationConsensus?.ID,
@@ -64,6 +66,9 @@ public static class SubImageEndpoints
         {
             var subImageAnnotations = dataContext.SubImageAnnotations.Select(x => new SubImageAnnotationDTO
             {
+                ID = x.ID,
+                Created = x.Created,
+                Updated = x.Updated,
                 X = x.X,
                 Y = x.Y,
                 Width = x.Width,
@@ -87,10 +92,14 @@ public static class SubImageEndpoints
                 Users = x.Users.Select(y => y.ID).ToList(),
                 SubImageAnnotations = x.SubImageAnnotations.Select(y => new SubImageAnnotationDTO
                 {
+                    ID = y.ID,
+                    Created = y.Created,
+                    Updated = y.Updated,
                     X = y.X,
                     Y = y.Y,
                     Width = y.Width,
                     Height = y.Height,
+                    Image = y.ImageID,
                     SubImageAnnotationGroup = y.SubImageAnnotationGroupID,
                     TrashSuperCategories = y.TrashSuperCategories.Select(z => z.ID).ToList(),
                     TrashSuperCategoriesConsensus = y.TrashSuperCategoriesConsensus.ID,

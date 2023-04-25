@@ -43,6 +43,7 @@ public class DataContext : DbContext
             entity.Property(e => e.URI).HasMaxLength(1000);
             entity.HasOne(e => e.User).WithMany(e => e.Images).HasForeignKey(e => e.UserID);
             entity.HasOne(e => e.ImageAnnotation).WithOne(e => e.Image).HasForeignKey<ImageAnnotationEntity>(e => e.ImageID);
+            entity.HasMany(e => e.SubImageAnnotations).WithOne(e => e.Image).HasForeignKey(e => e.ImageID);
         });
 
         modelBuilder.Entity<ImageAnnotationEntity>(entity =>
@@ -87,6 +88,7 @@ public class DataContext : DbContext
         ConfigureBaseEntity<SubImageAnnotationEntity>(modelBuilder);
         modelBuilder.Entity<SubImageAnnotationEntity>(entity =>
         {
+            entity.HasOne(e => e.Image).WithMany(e => e.SubImageAnnotations).HasForeignKey(e => e.ImageID).IsRequired();
             entity.HasOne(e => e.SubImageAnnotationGroup).WithMany(e => e.SubImageAnnotations).HasForeignKey(e => e.SubImageAnnotationGroupID).IsRequired();
             entity.HasMany(e => e.TrashSubCategories).WithOne(e => e.SubImageAnnotation).HasForeignKey(e => e.SubImageAnnotationID).IsRequired();
             entity.HasMany(e => e.TrashSuperCategories).WithOne(e => e.SubImageAnnotation).HasForeignKey(e => e.SubImageAnnotationID).IsRequired();

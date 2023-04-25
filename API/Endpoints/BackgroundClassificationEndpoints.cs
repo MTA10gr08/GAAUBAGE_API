@@ -44,6 +44,8 @@ public static class BackgroundclassifiCationEndpoints
             var imageAnnotationDTO = new ImageAnnotationDTO
             {
                 ID = nextImageAnnotation.ID,
+                Created = nextImageAnnotation.Created,
+                Updated = nextImageAnnotation.Updated,
                 Image = nextImageAnnotation.Image.ID,
                 BackgroundClassifications = nextImageAnnotation.BackgroundClassifications.Select(x => x.ID).ToList(),
                 BackgroundClassificationConsensus = nextImageAnnotation.BackgroundClassificationConsensus?.ID,
@@ -133,11 +135,11 @@ public static class BackgroundclassifiCationEndpoints
             var backgroundClassifications = imageAnnotation.Select(x => new BackgroundClassificationDTO
             {
                 ID = x.ID,
+                Created = x.Created,
+                Updated = x.Updated,
                 BackgroundClassificationLabels = x.BackgroundClassificationStrings.Select(x => x.value).ToList(),
                 Users = x.Users.Select(x => x.ID).ToList(),
                 ImageAnnotation = x.ImageAnnotation.ID,
-                Updated = x.Updated,
-                Created = x.Created
             }).ToList();
 
             return Results.Ok();

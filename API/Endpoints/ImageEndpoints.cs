@@ -40,6 +40,8 @@ public static class ImageEndpoints
                 var imageDTO = new ImageDTO
                 {
                     ID = imageEntity.ID,
+                    Created = imageEntity.Created,
+                    Updated = imageEntity.Updated,
                     URI = imageEntity.URI,
                     User = imageEntity.UserID,
                     ImageAnnotation = imageEntity.ImageAnnotationID,
@@ -55,6 +57,8 @@ public static class ImageEndpoints
             var imageDTOs = imageEntities.ConvertAll(x => new ImageDTO
             {
                 ID = x.ID,
+                Created = x.Created,
+                Updated = x.Updated,
                 URI = x.URI,
                 User = x.UserID,
             });

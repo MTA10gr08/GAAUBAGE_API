@@ -28,6 +28,8 @@ public static class UserEndpoints
                 var userDTO = new UserDTO
                 {
                     ID = userEntity.ID,
+                    Created = userEntity.Created,
+                    Updated = userEntity.Updated,
                     Alias = userEntity.Alias,
                     Tag = userEntity.Tag,
                     Score = userEntity.Score,

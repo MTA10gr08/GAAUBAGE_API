@@ -18,7 +18,7 @@ public static class TrashSuperCategoryEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
-            SubImageAnnotationEntity? nextSubImageAnnotation = null;
+            SubImageAnnotationEntity? nextSuperImageAnnotation = null;
 
             foreach (var subImageAnnotation in dataContext
                 .SubImageAnnotations
@@ -31,34 +31,37 @@ public static class TrashSuperCategoryEndpoints
             {
                 if (subImageAnnotation.IsInProgress)
                 {
-                    nextSubImageAnnotation = subImageAnnotation;
+                    nextSuperImageAnnotation = subImageAnnotation;
                     break;
                 }
 
                 if (!subImageAnnotation.IsComplete)
                 {
-                    nextSubImageAnnotation = subImageAnnotation;
+                    nextSuperImageAnnotation = subImageAnnotation;
                 }
 
-                nextSubImageAnnotation ??= subImageAnnotation;
+                nextSuperImageAnnotation ??= subImageAnnotation;
             }
 
-            if (nextSubImageAnnotation == null) return Results.NotFound();
+            if (nextSuperImageAnnotation == null) return Results.NotFound();
 
             var subImageAnnotationDTO = new SubImageAnnotationDTO
             {
-                X = nextSubImageAnnotation.X,
-                Y = nextSubImageAnnotation.Y,
-                Width = nextSubImageAnnotation.Width,
-                Height = nextSubImageAnnotation.Height,
-                SubImageAnnotationGroup = nextSubImageAnnotation.SubImageAnnotationGroup.ID,
-                TrashSubCategories = nextSubImageAnnotation.TrashSubCategories.Select(x => x.ID).ToList(),
-                TrashSubCategoriesConsensus = nextSubImageAnnotation.TrashSubCategoriesConsensus?.ID,
-                TrashSuperCategories = nextSubImageAnnotation.TrashSuperCategories.Select(x => x.ID).ToList(),
-                TrashSuperCategoriesConsensus = nextSubImageAnnotation.TrashSuperCategoriesConsensus?.ID,
-                Segmentations = nextSubImageAnnotation.Segmentations.Select(x => x.ID).ToList(),
-                IsComplete = nextSubImageAnnotation.IsComplete,
-                IsInProgress = nextSubImageAnnotation.IsInProgress,
+                ID = nextSuperImageAnnotation.ID,
+                Created = nextSuperImageAnnotation.Created,
+                Updated = nextSuperImageAnnotation.Updated,
+                X = nextSuperImageAnnotation.X,
+                Y = nextSuperImageAnnotation.Y,
+                Width = nextSuperImageAnnotation.Width,
+                Height = nextSuperImageAnnotation.Height,
+                SubImageAnnotationGroup = nextSuperImageAnnotation.SubImageAnnotationGroup.ID,
+                TrashSubCategories = nextSuperImageAnnotation.TrashSubCategories.Select(x => x.ID).ToList(),
+                TrashSubCategoriesConsensus = nextSuperImageAnnotation.TrashSubCategoriesConsensus?.ID,
+                TrashSuperCategories = nextSuperImageAnnotation.TrashSuperCategories.Select(x => x.ID).ToList(),
+                TrashSuperCategoriesConsensus = nextSuperImageAnnotation.TrashSuperCategoriesConsensus?.ID,
+                Segmentations = nextSuperImageAnnotation.Segmentations.Select(x => x.ID).ToList(),
+                IsComplete = nextSuperImageAnnotation.IsComplete,
+                IsInProgress = nextSuperImageAnnotation.IsInProgress,
             };
 
             return Results.Ok(subImageAnnotationDTO);

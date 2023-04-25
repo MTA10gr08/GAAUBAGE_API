@@ -47,6 +47,8 @@ public class ImageEntity : BaseEntity
     public Guid ImageAnnotationID { get; set; }
     public ImageAnnotationEntity ImageAnnotation { get; set; }
 
+    public ICollection<SubImageAnnotationEntity> SubImageAnnotations { get; set; } = new HashSet<SubImageAnnotationEntity>();
+
     public string URI { get; set; }
 }
 
@@ -131,6 +133,9 @@ public class SubImageAnnotationEntity : BaseEntity
     public uint Y { get; set; }
     public uint Width { get; set; }
     public uint Height { get; set; }
+
+    public Guid ImageID { get; set; }
+    public ImageEntity Image { get; set; }
 
     public Guid SubImageAnnotationGroupID { get; set; } 
     public SubImageAnnotationGroupEntity SubImageAnnotationGroup { get; set; } = null!;
