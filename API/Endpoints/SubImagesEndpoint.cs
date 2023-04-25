@@ -140,8 +140,8 @@ public static class SubImageEndpoints
             if (imageAnnotation == null)
                 return Results.NotFound("ImageAnnotation not found");
 
-            if (imageAnnotation.BackgroundClassifications.Any(x => x.Users.Any(z => z.ID == userID)))
-                return Results.BadRequest("User has already submitted a BackgroundClassification for this image");
+            if (imageAnnotation.SubImageAnnotationGroups.Any(x => x.Users.Any(z => z.ID == userID)))
+                return Results.BadRequest("User has already submitted a subimages for this image");
 
             FindAndUpdateBestFitGroup(ref imageAnnotation, ref subImageAnnotation, ref user, 0.5f);
 
@@ -277,11 +277,19 @@ public static class SubImageEndpoints
         }
         else
         {
+            var imageID = imageAnnotation.ImageID;
             imageAnnotation.SubImageAnnotationGroups.Add(new SubImageAnnotationGroupEntity
             {
                 ImageAnnotationID = imageAnnotation.ID,
                 Users = new List<UserEntity> { user },
-                SubImageAnnotations = subImageAnnotation.SubImageAnnotations.Select(x => new SubImageAnnotationEntity { X = x.X, Y = x.Y, Width = x.Width, Height = x.Height }).ToList(),
+                SubImageAnnotations = subImageAnnotation.SubImageAnnotations.Select(x => new SubImageAnnotationEntity
+                {
+                    X = x.X,
+                    Y = x.Y,
+                    Width = x.Width,
+                    Height = x.Height,
+                    ImageID = imageID
+                }).ToList(),
             });
         }
     }
