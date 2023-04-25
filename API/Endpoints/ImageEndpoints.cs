@@ -45,6 +45,7 @@ public static class ImageEndpoints
                     URI = imageEntity.URI,
                     User = imageEntity.UserID,
                     ImageAnnotation = imageEntity.ImageAnnotationID,
+                    SubImageAnnotations = imageEntity.SubImageAnnotations.Select(x => x.ID).ToList(),
                 };
                 return Results.Ok(imageDTO);
             }
@@ -61,6 +62,8 @@ public static class ImageEndpoints
                 Updated = x.Updated,
                 URI = x.URI,
                 User = x.UserID,
+                ImageAnnotation = x.ImageAnnotationID,
+                SubImageAnnotations = x.SubImageAnnotations.Select(x => x.ID).ToList(),
             });
 
             return Results.Ok(imageDTOs);
