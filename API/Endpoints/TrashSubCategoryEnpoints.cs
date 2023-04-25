@@ -50,6 +50,7 @@ public static class TrashSubCategoryEndpoints
                 ID = nextSubImageAnnotation.ID,
                 Created = nextSubImageAnnotation.Created,
                 Updated = nextSubImageAnnotation.Updated,
+                Image = nextSubImageAnnotation.ImageID,
                 X = nextSubImageAnnotation.X,
                 Y = nextSubImageAnnotation.Y,
                 Width = nextSubImageAnnotation.Width,

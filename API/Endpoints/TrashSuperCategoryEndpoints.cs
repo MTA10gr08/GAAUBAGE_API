@@ -50,6 +50,7 @@ public static class TrashSuperCategoryEndpoints
                 ID = nextSuperImageAnnotation.ID,
                 Created = nextSuperImageAnnotation.Created,
                 Updated = nextSuperImageAnnotation.Updated,
+                Image = nextSuperImageAnnotation.ImageID,
                 X = nextSuperImageAnnotation.X,
                 Y = nextSuperImageAnnotation.Y,
                 Width = nextSuperImageAnnotation.Width,
