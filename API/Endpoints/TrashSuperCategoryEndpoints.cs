@@ -8,7 +8,7 @@ public static class TrashSuperCategoryEndpoints
 {
     public static void MapTrashSuperCategoryEndpoints(this WebApplication app)
     {
-        app.MapGet("/imageannotations/trashsupercategories/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("/imageannotations/subimageannotations/trashsupercategories/next", (DataContext dataContext, ClaimsPrincipal user) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -64,7 +64,7 @@ public static class TrashSuperCategoryEndpoints
             return Results.Ok(subImageAnnotationDTO);
         }).Produces<SubImageAnnotationDTO>();
 
-        app.MapPost("imageannotations/{id}/trashsupercategories", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, TrashSuperCategoryDTO trashSuperCategory) =>
+        app.MapPost("imageannotations/subimageannotations/{id}/trashsupercategories", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, TrashSuperCategoryDTO trashSuperCategory) =>
         {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
