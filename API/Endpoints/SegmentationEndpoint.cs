@@ -76,7 +76,7 @@ public static class SegmentationEndpoints
             return Results.Ok(subImageAnnotationDTO);
         }).Produces<SubImageAnnotationDTO>();
 
-        app.MapPost("imageannotations/segmentations/{id}/trashsubcategories", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, SegmentationDTO segmentation) =>
+        app.MapPost("imageannotations/subimageannotations/{id}/segmentations", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, SegmentationDTO segmentation) =>
         {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
