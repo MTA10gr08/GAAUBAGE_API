@@ -116,6 +116,7 @@ app.MapTrashSubCatagoryEndpoints();
 app.MapTrashSuperCategoryEndpoints();
 app.MapLeaderboardEndpoints();
 app.MapImageAnnotationEndpoints();
+app.MapSegmentationEndpoints();
 
 if (builder.Environment.IsDevelopment())
 {
