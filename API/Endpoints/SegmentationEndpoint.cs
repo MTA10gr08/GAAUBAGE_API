@@ -9,7 +9,7 @@ public static class SegmentationEndpoints
 {
     public static void MapSegmentationEndpoints(this WebApplication app)
     {
-        app.MapGet("imageannotations/segmentations/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("/imageannotations/subimageannotations/segmentations/next", (DataContext dataContext, ClaimsPrincipal user) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -76,7 +76,7 @@ public static class SegmentationEndpoints
             return Results.Ok(subImageAnnotationDTO);
         }).Produces<SubImageAnnotationDTO>();
 
-        app.MapPost("imageannotations/{id}/segmentations", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, SegmentationDTO segmentation) =>
+        app.MapPost("imageannotations/segmentations/{id}/trashsubcategories", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, SegmentationDTO segmentation) =>
         {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
