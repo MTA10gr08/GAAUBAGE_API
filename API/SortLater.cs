@@ -2,6 +2,7 @@ using System.Net.Mime;
 using Accord.Math;
 using Accord.MachineLearning;
 using API.DTOs.Annotation;
+using NetTopologySuite.Geometries;
 
 public class Rectangle
 {
@@ -44,6 +45,46 @@ public static class something
         return address;
     }
 }
+
+public static class GeometryConverter
+{
+    public static MultiPolygon ToMultiPolygon(MultiPolygonDTO multiPolygonDto)
+    {
+        var polygons = new List<Polygon>();
+        foreach (var polygonDto in multiPolygonDto.Polygons)
+        {
+            polygons.Add(ToPolygon(polygonDto));
+        }
+        return new MultiPolygon(polygons.ToArray());
+    }
+
+    private static Polygon ToPolygon(PolygonDTO polygonDto)
+    {
+        var shell = ToLinearRing(polygonDto.Shell);
+        var holes = new List<LinearRing>();
+        foreach (var holeDto in polygonDto.Holes)
+        {
+            holes.Add(ToLinearRing(holeDto));
+        }
+        return new Polygon(shell, holes.ToArray());
+    }
+
+    private static LinearRing ToLinearRing(LinearRingDTO linearRingDto)
+    {
+        var coordinates = new List<Coordinate>();
+        foreach (var coordinateDto in linearRingDto.Coordinates)
+        {
+            coordinates.Add(ToCoordinate(coordinateDto));
+        }
+        return new LinearRing(coordinates.ToArray());
+    }
+
+    private static Coordinate ToCoordinate(CoordinateDTO coordinateDto)
+    {
+        return new Coordinate(coordinateDto.Longitude, coordinateDto.Latitude);
+    }
+}
+
 public static class EnumerableExtensions
 {
     public static T WeightedRandom<T>(this IEnumerable<T> source, Random? random = null)

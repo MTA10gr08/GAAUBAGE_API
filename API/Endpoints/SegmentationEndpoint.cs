@@ -92,8 +92,7 @@ public static class SegmentationEndpoints
 
             var subImageAnnotation = await dataContext
                 .SubImageAnnotations
-                .Include(x => x.TrashSubCategories)
-                .ThenInclude(x => x.Users)
+                .Include(x => x.Segmentations)
                 .FirstOrDefaultAsync(x => x.ID == id);
 
             if (subImageAnnotation == null)
@@ -105,7 +104,8 @@ public static class SegmentationEndpoints
             subImageAnnotation.Segmentations.Add(new(){
                 SubImageAnnotationID = subImageAnnotation.ID,
                 UserID = userID,
-                Segmentation = new(segmentation.Segmentation.Polygons.Select(x => new Polygon(new LinearRing(x.Shell.Coordinates.Select(y => new Coordinate(y.Longitude, y.Latitude)).ToArray()), x.Holes.Select(y => new LinearRing(y.Coordinates.Select(z => new Coordinate(z.Longitude, z.Latitude)).ToArray())).ToArray())).ToArray())
+                Segmentation = GeometryConverter.ToMultiPolygon(segmentation.Segmentation)
+                //Segmentation = new(segmentation.Segmentation.Polygons.Select(x => new Polygon(new LinearRing(x.Shell.Coordinates.Select(y => new Coordinate(y.Longitude, y.Latitude)).ToArray()), x.Holes.Select(y => new LinearRing(y.Coordinates.Select(z => new Coordinate(z.Longitude, z.Latitude)).ToArray())).ToArray())).ToArray())
             });
 
             try
