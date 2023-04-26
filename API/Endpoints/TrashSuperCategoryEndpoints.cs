@@ -27,7 +27,7 @@ public static class TrashSuperCategoryEndpoints
                 .ThenInclude(x => x.SubImageAnnotationGroups)
                 .ThenInclude(x => x.Users)
                 .AsEnumerable()
-                .Where(x => x.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == x.SubImageAnnotationGroup))
+                .Where(x => x.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == x.SubImageAnnotationGroup && x.SubImageAnnotationGroup.Users.Any(y => y.ID == userID)))
             {
                 if (subImageAnnotation.IsInProgress)
                 {
@@ -79,7 +79,7 @@ public static class TrashSuperCategoryEndpoints
                 return Results.BadRequest("Invalid user ID format");
 
             var user = dataContext.Users.SingleOrDefault(x => x.ID == userID);
-            if  (user == null)
+            if (user == null)
                 return Results.BadRequest("User not found");
 
             var subImageAnnotation = await dataContext
