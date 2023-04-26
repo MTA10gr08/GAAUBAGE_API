@@ -3,7 +3,8 @@ using System.Security.Claims;
 using API.DTOs.Annotation;
 using API.Entities;
 using Microsoft.EntityFrameworkCore;
-/*
+using NetTopologySuite.Geometries;
+
 public static class SegmentationEndpoints
 {
     public static void MapSegmentationEndpoints(this WebApplication app)
@@ -18,44 +19,58 @@ public static class SegmentationEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
-            SubImageAnnotationEntity? nextSubImageAnnotation = null;
+            SubImageAnnotationEntity? nextSuperImageAnnotation = null;
 
             foreach (var subImageAnnotation in dataContext
-                .ImageAnnotations
-                .Where(x => x.SubImageAnnotationGroupConsensus != null)
-                .Where(x => !x.SubImageAnnotationGroupConsensus.SubImageAnnotations.Any(y => y.Segmentations.Any(w => w.UserID == userID)))
-                .SelectMany(x => x.SubImageAnnotationGroupConsensus.SubImageAnnotations))
+                .SubImageAnnotations
+                .Include(x => x.SubImageAnnotationGroup)
+                .ThenInclude(x => x.ImageAnnotation)
+                .ThenInclude(x => x.SubImageAnnotationGroups)
+                .ThenInclude(x => x.Users)
+                .Include(x => x.TrashSuperCategories)
+                .ThenInclude(x => x.Users)
+                .Include(x => x.TrashSubCategories)
+                .ThenInclude(x => x.Users)
+                .AsEnumerable()
+                .Where(x => x.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == x.SubImageAnnotationGroup
+                            && x.Segmentations.Any(y => y.UserID == userID)
+                            && x.TrashSubCategoriesConsensus
+                            && x.TrashSubCategoriesConsensus))
             {
                 if (subImageAnnotation.IsInProgress)
                 {
-                    nextSubImageAnnotation = subImageAnnotation;
+                    nextSuperImageAnnotation = subImageAnnotation;
                     break;
                 }
 
                 if (!subImageAnnotation.IsComplete)
                 {
-                    nextSubImageAnnotation = subImageAnnotation;
+                    nextSuperImageAnnotation = subImageAnnotation;
                 }
 
-                nextSubImageAnnotation ??= subImageAnnotation;
+                nextSuperImageAnnotation ??= subImageAnnotation;
             }
 
-            if (nextSubImageAnnotation == null) return Results.NotFound();
+            if (nextSuperImageAnnotation == null) return Results.NotFound();
 
             var subImageAnnotationDTO = new SubImageAnnotationDTO
             {
-                X = nextSubImageAnnotation.X,
-                Y = nextSubImageAnnotation.Y,
-                Width = nextSubImageAnnotation.Width,
-                Height = nextSubImageAnnotation.Height,
-                SubImageAnnotationGroup = nextSubImageAnnotation.SubImageAnnotationGroup.ID,
-                TrashSubCategories = nextSubImageAnnotation.TrashSubCategories.Select(x => x.ID).ToList(),
-                TrashSubCategoriesConsensus = nextSubImageAnnotation.TrashSubCategoriesConsensus?.ID,
-                TrashSuperCategories = nextSubImageAnnotation.TrashSuperCategories.Select(x => x.ID).ToList(),
-                TrashSuperCategoriesConsensus = nextSubImageAnnotation.TrashSuperCategoriesConsensus?.ID,
-                Segmentations = nextSubImageAnnotation.Segmentations.Select(x => x.ID).ToList(),
-                IsComplete = nextSubImageAnnotation.IsComplete,
-                IsInProgress = nextSubImageAnnotation.IsInProgress,
+                ID = nextSuperImageAnnotation.ID,
+                Created = nextSuperImageAnnotation.Created,
+                Updated = nextSuperImageAnnotation.Updated,
+                Image = nextSuperImageAnnotation.ImageID,
+                X = nextSuperImageAnnotation.X,
+                Y = nextSuperImageAnnotation.Y,
+                Width = nextSuperImageAnnotation.Width,
+                Height = nextSuperImageAnnotation.Height,
+                SubImageAnnotationGroup = nextSuperImageAnnotation.SubImageAnnotationGroup.ID,
+                TrashSubCategories = nextSuperImageAnnotation.TrashSubCategories.Select(x => x.ID).ToList(),
+                TrashSubCategoriesConsensus = nextSuperImageAnnotation.TrashSubCategoriesConsensus?.ID,
+                TrashSuperCategories = nextSuperImageAnnotation.TrashSuperCategories.Select(x => x.ID).ToList(),
+                TrashSuperCategoriesConsensus = nextSuperImageAnnotation.TrashSuperCategoriesConsensus?.ID,
+                Segmentations = nextSuperImageAnnotation.Segmentations.Select(x => x.ID).ToList(),
+                IsComplete = nextSuperImageAnnotation.IsComplete,
+                IsInProgress = nextSuperImageAnnotation.IsInProgress,
             };
 
             return Results.Ok(subImageAnnotationDTO);
@@ -71,38 +86,27 @@ public static class SegmentationEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
+            var user = dataContext.Users.SingleOrDefault(x => x.ID == userID);
+            if (user == null)
+                return Results.BadRequest("User not found");
+
             var subImageAnnotation = await dataContext
                 .SubImageAnnotations
-                .Include(x => x.Segmentations)
-                .ThenInclude(x => x.User)
+                .Include(x => x.TrashSubCategories)
+                .ThenInclude(x => x.Users)
                 .FirstOrDefaultAsync(x => x.ID == id);
 
             if (subImageAnnotation == null)
                 return Results.NotFound("SubImageAnnotation not found");
 
-            if (subImageAnnotation.Segmentations.Any(x => x.UserID == userID))
+            if (subImageAnnotation.TrashSubCategories.Any(x => x.Users.Any(z => z.ID == userID)))
                 return Results.BadRequest("User has already submitted a BackgroundClassification for this image");
 
-            var label = segmentation.Segmentation;
-
-            var trashSupercategoryEntity = subImageAnnotation
-                .TrashSuperCategories
-                .SingleOrDefault(x => x.TrashSuperCategory == label);
-
-            var user = dataContext.Users.Single(x => x.ID == userID);
-            if (trashSupercategoryEntity)
-            {
-                trashSupercategoryEntity.Users.Add(user);
-            }
-            else
-            {
-                trashSupercategoryEntity = new SegmentationEntity
-                {
-                    Segmentation = label,
-                    Users = new List<UserEntity> { user }
-                };
-                subImageAnnotation.TrashSuperCategories.Add(trashSupercategoryEntity);
-            }
+            subImageAnnotation.Segmentations.Add(new(){
+                SubImageAnnotationID = subImageAnnotation.ID,
+                UserID = userID,
+                Segmentation = new(segmentation.Segmentation.Polygons.Select(x => new Polygon(new LinearRing(x.Shell.Coordinates.Select(y => new Coordinate(y.Longitude, y.Latitude)).ToArray()), x.Holes.Select(y => new LinearRing(y.Coordinates.Select(z => new Coordinate(z.Longitude, z.Latitude)).ToArray())).ToArray())).ToArray())
+            });
 
             try
             {
@@ -123,4 +127,4 @@ public static class SegmentationEndpoints
             return Results.Ok();
         });
     }
-}*/
+}

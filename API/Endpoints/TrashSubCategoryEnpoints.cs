@@ -29,7 +29,8 @@ public static class TrashSubCategoryEndpoints
                 .Include(x => x.TrashSubCategories)
                 .ThenInclude(x => x.Users)
                 .AsEnumerable()
-                .Where(x => x.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == x.SubImageAnnotationGroup && !x.TrashSubCategories.Any(y => y.Users.Any(z => z.ID == userID))))
+                .Where(x => x.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == x.SubImageAnnotationGroup
+                            && !x.TrashSubCategories.Any(y => y.Users.Any(z => z.ID == userID))))
             {
                 if (subImageAnnotation.IsInProgress)
                 {
