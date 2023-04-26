@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelperLib", "HelperLib\HelperLib.csproj", "{B69AABB0-D6C7-47EF-9817-87315175FB55}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "API", "API\API.csproj", "{F713E369-2BBC-474B-83D2-8DB2F39BCC21}"
 EndProject
 Global

@@ -5,40 +5,42 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using MySqlConnector;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//Check required Environment variables
-var Configuration = builder.Configuration;
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.Configure<AppSettings>(builder.Configuration);
+}
+else
+{
+    builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("ASPNETCORE"));
+}
 
-builder.Services.Configure<AppSettings>(Configuration);
-
-//string DBAddress = Configuration["Db:Address"] ?? throw new Exception("Missing configuration value: Db:Address");
-//uint DBPort = uint.Parse((Configuration["DB:Port"] ?? throw new Exception("Missing configuration value: DB:Port")));
-//string DBDatabase = Configuration["DB:Database"] ?? throw new Exception("Missing configuration value: DB:Database");
-//string DBUser = Configuration["DB:User"] ?? throw new Exception("Missing configuration value: DB:User");
-//string DBPassword = Configuration["DB:Password"] ?? throw new Exception("Missing configuration value: DB:Password");
-
-/*string JwtIssuer = Configuration["Jwt:Issuer"] ?? throw new Exception("Missing configuration value: Jwt:Issuer");
-string JwtAudience = Configuration["Jwt:Audience"] ?? throw new Exception("Missing configuration value: Jwt:Audience");
-string JwtKey = Configuration["Jwt:Key"] ?? throw new Exception("Missing configuration value: Jwt:Key");*/
+var appSettings = builder.Configuration.Get<AppSettings>();
+if (appSettings == null) throw new Exception("Missing configuration value: AppSettings");
 
 builder.Services.AddSingleton<TokenProvider>();
 
-//Connect to DB
-//var connectionStringBuilder = new MySqlConnectionStringBuilder{
-//    Server = DBAddress,
-//    Port = DBPort,
-//    Database = DBDatabase,
-//    UserID = DBUser,
-//    Password = DBPassword
-//};
-//var serverVersion = ServerVersion.AutoDetect(connectionStringBuilder.ConnectionString);
-//builder.Services.AddDbContext<DataContext>(options => options.UseMySql(connectionStringBuilder.ConnectionString, serverVersion));
-
-//builder.Services.AddDbContext<DataContext>(options => options.UseSqlite("Data Source=:memory:", x => x.UseNetTopologySuite()));
-builder.Services.AddDbContext<DataContext>(options => options.UseSqlite("Data Source=file::memory:?cache=shared", x => x.UseNetTopologySuite()));
+if (appSettings.DB == null)
+{
+    builder.Services.AddDbContext<DataContext>(options => options.UseSqlite("Data Source=file::memory:?cache=shared", x => x.UseNetTopologySuite()));
+}
+else
+{
+    var connectionStringBuilder = new MySqlConnectionStringBuilder
+    {
+        Server = appSettings.DB.Address,
+        Port = appSettings.DB.Port,
+        Database = appSettings.DB.Database,
+        UserID = appSettings.DB.User,
+        Password = appSettings.DB.Password
+    };
+    var serverVersion = ServerVersion.AutoDetect(connectionStringBuilder.ConnectionString);
+    builder.Services.AddDbContext<DataContext>(options => options.UseMySql(connectionStringBuilder.ConnectionString, serverVersion, x => x.UseNetTopologySuite()));
+}
 
 //Set up Authentication and Authorization
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
@@ -49,9 +51,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = Configuration.GetSection("Jwt:Issuer").Value,
-        ValidAudience = Configuration.GetSection("Jwt:Audience").Value,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetSection("Jwt:Key").Value))
+        ValidIssuer = appSettings.Jwt.Issuer,
+        ValidAudience = appSettings.Jwt.Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(appSettings.Jwt.Key))
     };
 });
 

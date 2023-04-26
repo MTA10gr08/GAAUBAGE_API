@@ -1,0 +1,45 @@
+# Please refer https://aka.ms/HTTPSinContainer on how to setup an https developer certificate for your ASP.NET Core service.
+
+version: '3.4'
+
+services:
+  api:
+    image: api
+    build:
+      context: .
+      dockerfile: API/Dockerfile
+    ports:
+      - 5255:5255
+    environment:
+      - ASPNETCORE_Jwt__Key=ReplaceMe
+      - ASPNETCORE_Jwt__Issuer=api
+      - ASPNETCORE_Jwt__Audience=game
+      - ASPNETCORE_DB__Address=mariadb
+      - ASPNETCORE_DB__Port=3306
+      - ASPNETCORE_DB__Database=Database
+      - ASPNETCORE_DB__User=Username
+      - ASPNETCORE_DB__Password=ReplaceMe
+    depends_on:
+      - mariadb
+    networks:
+      - app_network
+
+  mariadb:
+    image: mariadb:latest
+    container_name: mariadb_container
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: Database
+      MYSQL_USER: Username
+      MYSQL_PASSWORD: Password
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - app_network
+
+volumes:
+  mariadb_data:
+
+networks:
+  app_network:

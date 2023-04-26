@@ -21,6 +21,27 @@ public partial class AppSettings
 
     [JsonProperty("Jwt")]
     public Jwt Jwt { get; set; }
+
+    [JsonProperty("DB")]
+    public DB? DB { get; set; }
+}
+
+public partial class DB
+{
+    [JsonProperty("Address")]
+    public string Address { get; set; }
+
+    [JsonProperty("Port")]
+    public uint Port { get; set; }
+
+    [JsonProperty("Database")]
+    public string Database { get; set; }
+
+    [JsonProperty("User")]
+    public string User { get; set; }
+
+    [JsonProperty("Password")]
+    public string Password { get; set; }
 }
 
 public partial class Jwt

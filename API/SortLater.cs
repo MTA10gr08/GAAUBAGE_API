@@ -3,6 +3,10 @@ using Accord.Math;
 using Accord.MachineLearning;
 using API.DTOs.Annotation;
 using NetTopologySuite.Geometries;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.AspNetCore.Authentication;
 
 public class Rectangle
 {
