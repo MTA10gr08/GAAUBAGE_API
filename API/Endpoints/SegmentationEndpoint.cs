@@ -19,7 +19,7 @@ public static class SegmentationEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
-            SubImageAnnotationEntity? nextSuperImageAnnotation = null;
+            SubImageAnnotationEntity? nextSubImageAnnotation = null;
 
             foreach (var subImageAnnotation in dataContext
                 .SubImageAnnotations
@@ -33,44 +33,44 @@ public static class SegmentationEndpoints
                 .ThenInclude(x => x.Users)
                 .AsEnumerable()
                 .Where(x => x.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == x.SubImageAnnotationGroup
-                            && x.Segmentations.Any(y => y.UserID == userID)
+                            && !x.Segmentations.Any(y => y.UserID == userID)
                             && x.TrashSubCategoriesConsensus
-                            && x.TrashSubCategoriesConsensus))
+                            && x.TrashSuperCategoriesConsensus))
             {
                 if (subImageAnnotation.IsInProgress)
                 {
-                    nextSuperImageAnnotation = subImageAnnotation;
+                    nextSubImageAnnotation = subImageAnnotation;
                     break;
                 }
 
                 if (!subImageAnnotation.IsComplete)
                 {
-                    nextSuperImageAnnotation = subImageAnnotation;
+                    nextSubImageAnnotation = subImageAnnotation;
                 }
 
-                nextSuperImageAnnotation ??= subImageAnnotation;
+                nextSubImageAnnotation ??= subImageAnnotation;
             }
 
-            if (nextSuperImageAnnotation == null) return Results.NotFound();
+            if (nextSubImageAnnotation == null) return Results.NotFound();
 
             var subImageAnnotationDTO = new SubImageAnnotationDTO
             {
-                ID = nextSuperImageAnnotation.ID,
-                Created = nextSuperImageAnnotation.Created,
-                Updated = nextSuperImageAnnotation.Updated,
-                Image = nextSuperImageAnnotation.ImageID,
-                X = nextSuperImageAnnotation.X,
-                Y = nextSuperImageAnnotation.Y,
-                Width = nextSuperImageAnnotation.Width,
-                Height = nextSuperImageAnnotation.Height,
-                SubImageAnnotationGroup = nextSuperImageAnnotation.SubImageAnnotationGroup.ID,
-                TrashSubCategories = nextSuperImageAnnotation.TrashSubCategories.Select(x => x.ID).ToList(),
-                TrashSubCategoriesConsensus = nextSuperImageAnnotation.TrashSubCategoriesConsensus?.ID,
-                TrashSuperCategories = nextSuperImageAnnotation.TrashSuperCategories.Select(x => x.ID).ToList(),
-                TrashSuperCategoriesConsensus = nextSuperImageAnnotation.TrashSuperCategoriesConsensus?.ID,
-                Segmentations = nextSuperImageAnnotation.Segmentations.Select(x => x.ID).ToList(),
-                IsComplete = nextSuperImageAnnotation.IsComplete,
-                IsInProgress = nextSuperImageAnnotation.IsInProgress,
+                ID = nextSubImageAnnotation.ID,
+                Created = nextSubImageAnnotation.Created,
+                Updated = nextSubImageAnnotation.Updated,
+                Image = nextSubImageAnnotation.ImageID,
+                X = nextSubImageAnnotation.X,
+                Y = nextSubImageAnnotation.Y,
+                Width = nextSubImageAnnotation.Width,
+                Height = nextSubImageAnnotation.Height,
+                SubImageAnnotationGroup = nextSubImageAnnotation.SubImageAnnotationGroup.ID,
+                TrashSubCategories = nextSubImageAnnotation.TrashSubCategories.Select(x => x.ID).ToList(),
+                TrashSubCategoriesConsensus = nextSubImageAnnotation.TrashSubCategoriesConsensus?.ID,
+                TrashSuperCategories = nextSubImageAnnotation.TrashSuperCategories.Select(x => x.ID).ToList(),
+                TrashSuperCategoriesConsensus = nextSubImageAnnotation.TrashSuperCategoriesConsensus?.ID,
+                Segmentations = nextSubImageAnnotation.Segmentations.Select(x => x.ID).ToList(),
+                IsComplete = nextSubImageAnnotation.IsComplete,
+                IsInProgress = nextSubImageAnnotation.IsInProgress,
             };
 
             return Results.Ok(subImageAnnotationDTO);
