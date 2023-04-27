@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using API.DTOs.Annotation;
 using API.DTOs.Gamification;
+using API.Entities;
 using Microsoft.Extensions.Options;
 
 namespace API.Endpoints;
@@ -7,16 +9,52 @@ public static class UserGoalEndpoints
 {
     public static void MapUserGoalEndpoints(this WebApplication app)
     {
-        app.MapGet("/UserGoal", (IOptions<AppSettings> IappSettings) =>
+        app.MapGet("/usergoal", (DataContext dataContext, ClaimsPrincipal claims) =>
         {
-            var task = DateTime.UtcNow.Day % 4;
-            UserGoalDTO categories = new()
+            var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+                return Results.Unauthorized();
+
+            if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
+                return Results.BadRequest("Invalid user ID format");
+
+            var user = dataContext.Users.Find(userID);
+            if (user == null)
+                return Results.BadRequest("User not found");
+
+            var now = DateTime.UtcNow;
+            var startOfDayUtc = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0, DateTimeKind.Utc);
+
+            List<UserGoalDTO> userGoals = new()
             {
-                TaskType = task == 0 ? "CC" : task == 1 ? "SI" : task == 2 ? "TC" : "Seg",
-                TotalToDo = 10,
-                Done = 5
+                new()
+                {
+                    TaskType = "CC",
+                    TotalToDo = 10u,
+                    Done = (uint)(dataContext.Users.Find(userID)?.BackgroundClassifications.Count(x => x.Created.Date >= startOfDayUtc) ?? 0),
+                },
+                new()
+                {
+                    TaskType = "SI",
+                    TotalToDo = 10u,
+                    Done = (uint)(dataContext.Users.Find(userID)?.SubImageAnnotationGroups.Count(x => x.Created.Date >= startOfDayUtc) ?? 0),
+                },
+                new()
+                {
+                    TaskType = "TC",
+                    TotalToDo = 5u,
+                    Done = (uint)(dataContext.Users.Find(userID)?.TrashSubCategories.Count(x => x.Created.Date >= startOfDayUtc) ?? 0),
+                },
+                new()
+                {
+                    TaskType = "Se",
+                    TotalToDo = 5u,
+                    Done = (uint)(dataContext.Users.Find(userID)?.Segmentations.Count(x => x.Created.Date >= startOfDayUtc) ?? 0),
+                }
             };
-            return Results.Ok(categories);
-        }).Produces<CategoriesDTO>().AllowAnonymous();
+
+            return Results.Ok(userGoals);
+        }).Produces<List<UserGoalDTO>>();
     }
 }

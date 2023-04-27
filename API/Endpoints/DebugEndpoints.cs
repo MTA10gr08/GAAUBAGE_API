@@ -157,37 +157,6 @@ public static class DebugEndpoints
                 }
             }
 
-            /*
-            foreach (var client in clients)
-            {
-                var response = await client.GetAsync("imageannotations/subimages/next");
-                while (response.StatusCode == HttpStatusCode.OK)
-                {
-                    var responseContent = await response.Content.ReadFromJsonAsync<ImageAnnotationDTO>();
-                    var responseresponse = await client.PostAsJsonAsync($"/imageannotations/{responseContent.ID}/subimages", new SubImageAnnotationGroupDTO
-                    {
-                        SubImages = new List<SubImageAnnotationDTO>
-                        {
-                            new ()
-                            {
-                                    X = 50,
-                                    Y = 50,
-                                    Width = 50,
-                                    Height = 50
-                            },
-                            new ()
-                            {
-                                    X = 200,
-                                    Y = 200,
-                                    Width = 50,
-                                    Height = 50
-                            }
-                        }
-                    });
-                    response = await client.GetAsync("imageannotations/subimages/next");
-                }
-            }*/
-
             foreach (var client in clients)
             {
                 client.Dispose();
