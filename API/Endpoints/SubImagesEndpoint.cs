@@ -2,6 +2,7 @@ using System.Security.Claims;
 using API.DTOs.Annotation;
 using API.Entities;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Hungarian = HungarianAlgorithm.HungarianAlgorithm;
 
 namespace API.Endpoints;
@@ -131,6 +132,7 @@ public static class SubImageEndpoints
 
             var imageAnnotation = await dataContext
                 .ImageAnnotations
+                .Include(x => x.Image)
                 .Include(x => x.SubImageAnnotationGroups)
                 .ThenInclude(x => x.Users)
                 .Include(x => x.SubImageAnnotationGroups)
@@ -142,6 +144,9 @@ public static class SubImageEndpoints
 
             if (imageAnnotation.SubImageAnnotationGroups.Any(x => x.Users.Any(z => z.ID == userID)))
                 return Results.BadRequest("User has already submitted a subimages for this image");
+
+            /*if (imageAnnotation.ImageID == Guid.Empty)
+                return Results.BadRequest("ImageAnnotation has no image: " + imageAnnotation.Image.ID);*/
 
             FindAndUpdateBestFitGroup(ref imageAnnotation, ref subImageAnnotation, ref user, 0.5f);
 
@@ -277,8 +282,8 @@ public static class SubImageEndpoints
         }
         else
         {
-            var imageID = imageAnnotation.ImageID;
-            imageAnnotation.SubImageAnnotationGroups.Add(new SubImageAnnotationGroupEntity
+            var imageID = imageAnnotation.Image.ID;
+            var subImageAnnotationGroupToAdd = new SubImageAnnotationGroupEntity()
             {
                 ImageAnnotationID = imageAnnotation.ID,
                 Users = new List<UserEntity> { user },
@@ -290,7 +295,8 @@ public static class SubImageEndpoints
                     Height = x.Height,
                     ImageID = imageID
                 }).ToList(),
-            });
+            };
+            imageAnnotation.SubImageAnnotationGroups.Add(subImageAnnotationGroupToAdd);
         }
     }
 }
