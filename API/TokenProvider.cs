@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
 public sealed class Role : IEquatable<Role>
 {
@@ -30,7 +31,10 @@ public class TokenProvider
 
     public string GenerateToken(Guid nameIdentifier, Role role, DateTime expires)
     {
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key));
+        Console.WriteLine("jwtSettings.Key");
+        Console.WriteLine(jwtSettings.Key);
+        var test = Encoding.UTF8.GetBytes(jwtSettings.Key);
+        var securityKey = new SymmetricSecurityKey(test);
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
         var tokenDescriptor = new SecurityTokenDescriptor

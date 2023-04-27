@@ -10,19 +10,13 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.Configure<AppSettings>(builder.Configuration);
-}
-else
-{
-    builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("ASPNETCORE"));
-}
+
+builder.Services.Configure<AppSettings>(builder.Configuration);
+
+builder.Services.AddSingleton<TokenProvider>();
 
 var appSettings = builder.Configuration.Get<AppSettings>();
 if (appSettings == null) throw new Exception("Missing configuration value: AppSettings");
-
-builder.Services.AddSingleton<TokenProvider>();
 
 if (appSettings.DB == null)
 {
