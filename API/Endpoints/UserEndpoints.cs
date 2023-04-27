@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using API.DTOs.Annotation;
 using API.Entities;
 
@@ -8,14 +9,19 @@ public static class UserEndpoints
     {
         app.MapPost("/users", (UserDTO user, DataContext dataContext, TokenProvider tokenProvider) =>
         {
-            var createdUser = dataContext.Users.Add(new UserEntity { Alias = user.Alias, Tag = dataContext.Users.Count() % 2 == 0 ? "Narr" : "Blap" }).Entity;
+            var createdUser = dataContext.Users.Add(new UserEntity { Alias = user.Alias, Tag = dataContext.Users.Count(x => x.Tag == "Narr") < dataContext.Users.Count(x => x.Tag == "Blap") ? "Narr" : "Blap" }).Entity;
             dataContext.SaveChanges();
             return Results.Ok(tokenProvider.GenerateToken(createdUser.ID, Role.User, DateTime.Now.AddYears(1)));
         }).Produces<string>();
 
-        app.MapPost("/users/admin", (UserDTO user, DataContext dataContext, TokenProvider tokenProvider) =>
+        app.MapPost("/users/admin", (UserDTO user, DataContext dataContext, TokenProvider tokenProvider, ClaimsPrincipal claims) =>
         {
-            var createdUser = dataContext.Users.Add(new UserEntity { Alias = user.Alias, Tag = user.Tag }).Entity;
+            /*if (!something.ValidateUserAndRole(dataContext, claims, Role.Admin, out var userEntity, out var result))
+            {
+                return result;
+            }*/
+
+            var createdUser = dataContext.Users.Add(new UserEntity { Alias = user.Alias, Tag = dataContext.Users.Count(x => x.Tag == "Narr") < dataContext.Users.Count(x => x.Tag == "Blap") ? "Narr" : "Blap" }).Entity;
             dataContext.SaveChanges();
             return Results.Ok(tokenProvider.GenerateToken(createdUser.ID, Role.Admin, DateTime.Now.AddYears(1)));
         }).Produces<string>().RequireHost("localhost");

@@ -11,22 +11,10 @@ public static class ImageEndpoints
     {
         app.MapPost("/images", async (List<ImageDTO> images, DataContext dataContext, ClaimsPrincipal claims) =>
         {
-            var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
-            var userRoleClaim = claims.FindFirst(ClaimTypes.Role);
-
-            if (userIdClaim == null || userRoleClaim == null || userRoleClaim?.Value != Role.Admin)
+            if (!something.ValidateUserAndRole(dataContext, claims, Role.Admin, out var user, out var result))
             {
-                return Results.Unauthorized();
+                return result;
             }
-
-            if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
-            {
-                return Results.BadRequest("Invalid user ID format");
-            }
-
-            var user = dataContext.Users.Find(userID);
-            if (user == null)
-                return Results.BadRequest("User not found");
 
             if (images.Count == 0)
                 return Results.BadRequest("No images provided");

@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Authentication;
+using API.Entities;
+using System.Security.Claims;
 
 public class Rectangle
 {
@@ -47,6 +49,35 @@ public static class something
         if (!string.IsNullOrEmpty(address)) address = address.Split(";", StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
 
         return address;
+    }
+
+    public static bool ValidateUserAndRole(DataContext dataContext, ClaimsPrincipal claims, Role requiredRole, out UserEntity? user, out IResult result)
+    {
+        user = null;
+        result = Results.Ok();
+        var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
+        var userRoleClaim = claims.FindFirst(ClaimTypes.Role);
+
+        if (userIdClaim == null || userRoleClaim == null || userRoleClaim?.Value != requiredRole)
+        {
+            result = Results.Unauthorized();
+            return false;
+        }
+
+        if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
+        {
+            result = Results.BadRequest("Invalid user ID format");
+            return false;
+        }
+
+        user = dataContext.Users.Find(userID);
+        if (user == null)
+        {
+            result = Results.BadRequest("User not found");
+            return false;
+        }
+
+        return true;
     }
 }
 

@@ -2,6 +2,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
 WORKDIR /app
 EXPOSE 5255
 
+RUN apt-get update && apt-get install -y curl
+
 ENV ASPNETCORE_URLS=http://+:5255
 
 # Creates a non-root user with an explicit UID and adds permission to access the /app folder
