@@ -16,11 +16,6 @@ public static class UserEndpoints
 
         app.MapPost("/users/admin", (UserDTO user, DataContext dataContext, TokenProvider tokenProvider, ClaimsPrincipal claims) =>
         {
-            /*if (!something.ValidateUserAndRole(dataContext, claims, Role.Admin, out var userEntity, out var result))
-            {
-                return result;
-            }*/
-
             var createdUser = dataContext.Users.Add(new UserEntity { Alias = user.Alias, Tag = dataContext.Users.Count(x => x.Tag == "Narr") < dataContext.Users.Count(x => x.Tag == "Blap") ? "Narr" : "Blap" }).Entity;
             dataContext.SaveChanges();
             return Results.Ok(tokenProvider.GenerateToken(createdUser.ID, Role.Admin, DateTime.Now.AddYears(1)));

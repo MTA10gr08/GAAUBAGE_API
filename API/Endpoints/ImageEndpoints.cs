@@ -2,6 +2,7 @@ using System.Net.Http;
 using System.Security.Claims;
 using API.DTOs.Annotation;
 using API.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Endpoints;
@@ -11,9 +12,23 @@ public static class ImageEndpoints
     {
         app.MapPost("/images", async (List<ImageDTO> images, DataContext dataContext, ClaimsPrincipal claims) =>
         {
-            if (!something.ValidateUserAndRole(dataContext, claims, Role.Admin, out var user, out var result))
+            var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
+            //var userRoleClaim = claims.FindFirst(ClaimTypes.Role);
+
+            if (userIdClaim == null) // || userRoleClaim == null || userRoleClaim?.Value != requiredRole)
             {
-                return result;
+                return Results.Unauthorized();
+            }
+
+            if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
+            {
+                return Results.BadRequest("Invalid user ID format");
+            }
+
+            var user = dataContext.Users.Find(userID);
+            if (user == null)
+            {
+                return Results.BadRequest("User not found");
             }
 
             if (images.Count == 0)
@@ -82,7 +97,7 @@ public static class ImageEndpoints
             }
 
             return Results.Ok();
-        }).RequireAuthorization();
+        });
 
         app.MapGet("/images/{id}", (Guid id, DataContext dataContext) =>
         {
