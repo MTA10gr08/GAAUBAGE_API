@@ -1,7 +1,9 @@
+using Swashbuckle.AspNetCore.Annotations;
+
 namespace API.DTOs.Gamification;
 public class UserGoalDTO
 {
-    public string TaskType { get; set; } = string.Empty;
-    public uint TotalToDo;
-    public uint Done;
+    [SwaggerSchema(ReadOnly = true)] public string TaskType { get; set; } = string.Empty;
+    [SwaggerSchema(ReadOnly = true)] public uint TotalToDo { get; set; }
+    [SwaggerSchema(ReadOnly = true)] public uint Done { get; set; }
 }
