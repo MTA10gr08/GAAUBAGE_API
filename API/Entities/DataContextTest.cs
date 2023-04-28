@@ -29,6 +29,7 @@ public class DataContext : DbContext
             entity.Property(e => e.Alias).HasMaxLength(100);
             entity.Property(e => e.Tag).HasMaxLength(100);
             entity.HasMany(e => e.Images).WithOne(e => e.User).HasForeignKey(e => e.UserID);
+            entity.HasMany(e => e.VoteSkipped).WithMany(e => e.VoteSkipped);
             entity.HasMany(e => e.BackgroundClassifications).WithMany(e => e.Users);
             entity.HasMany(e => e.ContextClassifications).WithMany(e => e.Users);
             entity.HasMany(e => e.SubImageAnnotationGroups).WithMany(e => e.Users);
@@ -49,6 +50,7 @@ public class DataContext : DbContext
         modelBuilder.Entity<ImageAnnotationEntity>(entity =>
         {
             entity.HasOne(e => e.Image).WithOne(e => e.ImageAnnotation).HasForeignKey<ImageEntity>(e => e.ImageAnnotationID);
+            entity.HasMany(e => e.VoteSkipped).WithMany(e => e.VoteSkipped);
             entity.HasMany(e => e.BackgroundClassifications).WithOne(e => e.ImageAnnotation).HasForeignKey(e => e.ImageAnnotationID);
             entity.HasMany(e => e.ContextClassifications).WithOne(e => e.ImageAnnotation).HasForeignKey(e => e.ImageAnnotationID);
             entity.HasMany(e => e.SubImageAnnotationGroups).WithOne(e => e.ImageAnnotation).HasForeignKey(e => e.ImageAnnotationID);

@@ -36,6 +36,7 @@ public static class UserEndpoints
                     Score = userEntity.Score,
                     Level = userEntity.Level,
                     Images = userEntity.Images.Select(x => x.ID).ToList(),
+                    Skipped = userEntity.VoteSkipped.Select(x => x.ID).ToList(),
                     BackgroundClassificationLabels = userEntity.BackgroundClassifications.Select(x => x.ID).ToList(),
                     ContextClassifications = userEntity.ContextClassifications.Select(x => x.ID).ToList(),
                     SubImageGroups = userEntity.SubImageAnnotationGroups.Select(x => x.ID).ToList(),

@@ -47,6 +47,7 @@ public static class ContextClassificationEndpoints
                 Created = nextImageAnnotation.Created,
                 Updated = nextImageAnnotation.Updated,
                 Image = nextImageAnnotation.Image.ID,
+                Skipped = nextImageAnnotation.VoteSkipped.Select(x => x.ID).ToList(),
                 BackgroundClassifications = nextImageAnnotation.BackgroundClassifications.Select(x => x.ID).ToList(),
                 BackgroundClassificationConsensus = nextImageAnnotation.BackgroundClassificationConsensus?.ID,
                 ContextClassifications = nextImageAnnotation.ContextClassifications.Select(x => x.ID).ToList(),
@@ -71,7 +72,7 @@ public static class ContextClassificationEndpoints
                 return Results.BadRequest("Invalid user ID format");
 
             var user = dataContext.Users.SingleOrDefault(x => x.ID == userID);
-            if  (user == null)
+            if (user == null)
                 return Results.BadRequest("User not found");
 
             var imageAnnotation = await dataContext

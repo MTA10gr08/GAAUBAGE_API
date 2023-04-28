@@ -17,6 +17,7 @@ public class UserEntity : BaseEntity
     public string Alias { get; set; }
     public string Tag { get; set; }
     public ICollection<ImageEntity> Images { get; set; } = new HashSet<ImageEntity>();
+    public ICollection<ImageAnnotationEntity> VoteSkipped { get; set; } = new HashSet<ImageAnnotationEntity>();
     public ICollection<BackgroundClassificationEntity> BackgroundClassifications { get; set; } = new HashSet<BackgroundClassificationEntity>();
     public ICollection<ContextClassificationEntity> ContextClassifications { get; set; } = new HashSet<ContextClassificationEntity>();
     public ICollection<SubImageAnnotationGroupEntity> SubImageAnnotationGroups { get; set; } = new HashSet<SubImageAnnotationGroupEntity>();
@@ -57,6 +58,8 @@ public class ImageAnnotationEntity : BaseEntity
     public Guid ImageID { get; set; }
     public ImageEntity Image { get; set; }
 
+    public ICollection<UserEntity> VoteSkipped { get; set; } = new HashSet<UserEntity>();
+
     public ICollection<BackgroundClassificationEntity> BackgroundClassifications { get; set; } = new HashSet<BackgroundClassificationEntity>();
     public BackgroundClassificationEntity? BackgroundClassificationConsensus
     {
@@ -93,6 +96,21 @@ public class ImageAnnotationEntity : BaseEntity
     public bool IsInProgress => !(BackgroundClassificationConsensus && ContextClassificationConsensus)
         && (BackgroundClassifications.Any() || ContextClassifications.Any());
     public bool IsComplete => BackgroundClassificationConsensus && ContextClassificationConsensus;
+    public bool IsSkipped
+    {
+        get
+        {
+            var skipped = VoteSkipped.Count;
+            var annotations = BackgroundClassifications
+                .SelectMany(x => x.Users)
+                .Concat(ContextClassifications.SelectMany(x => x.Users))
+                .Concat(SubImageAnnotationGroups.SelectMany(x => x.Users))
+                .Distinct()
+                .Count();
+            if (skipped + annotations < 5) return false;
+            return skipped > annotations;
+        }
+    }
 }
 
 public class BackgroundClassificationEntity : BaseEntity

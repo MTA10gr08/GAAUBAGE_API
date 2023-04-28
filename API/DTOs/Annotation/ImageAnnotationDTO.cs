@@ -5,6 +5,8 @@ public class ImageAnnotationDTO : BaseDTO
 {
     [SwaggerSchema(ReadOnly = true)] public Guid Image { get; set; }
 
+    [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> Skipped { get; set; }
+
     [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> BackgroundClassifications { get; set; } = new HashSet<Guid>();
     [SwaggerSchema(ReadOnly = true)] public Guid? BackgroundClassificationConsensus { get; set; }
 

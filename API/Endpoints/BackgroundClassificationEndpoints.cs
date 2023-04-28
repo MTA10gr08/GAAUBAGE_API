@@ -47,6 +47,7 @@ public static class BackgroundclassifiCationEndpoints
                 Created = nextImageAnnotation.Created,
                 Updated = nextImageAnnotation.Updated,
                 Image = nextImageAnnotation.Image.ID,
+                Skipped = nextImageAnnotation.VoteSkipped.Select(x => x.ID).ToList(),
                 BackgroundClassifications = nextImageAnnotation.BackgroundClassifications.Select(x => x.ID).ToList(),
                 BackgroundClassificationConsensus = nextImageAnnotation.BackgroundClassificationConsensus?.ID,
                 ContextClassifications = nextImageAnnotation.ContextClassifications.Select(x => x.ID).ToList(),

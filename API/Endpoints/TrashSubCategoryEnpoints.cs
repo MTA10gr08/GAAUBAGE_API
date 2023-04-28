@@ -135,5 +135,39 @@ public static class TrashSubCategoryEndpoints
 
             return Results.Ok();
         });
+
+        app.MapGet("imageannotations/subimageannotations/trashsubcategories/{id}", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, TrashSubCategoryDTO trashSubCategory) =>
+        {
+            var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+                return Results.Unauthorized();
+
+            if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
+                return Results.BadRequest("Invalid user ID format");
+
+            var user = dataContext.Users.SingleOrDefault(x => x.ID == userID);
+            if (user == null)
+                return Results.BadRequest("User not found");
+
+            var TrashSubCategoryEntity = await dataContext
+                .TrashSubCategories
+                .Include(x => x.Users)
+                .FirstOrDefaultAsync(x => x.ID == id);
+
+            if (TrashSubCategoryEntity == null)
+                return Results.NotFound("TrashSubCategory not found");
+
+            var TrashSubCategory = new TrashSubCategoryDTO(){
+                ID = TrashSubCategoryEntity.ID,
+                Created = TrashSubCategoryEntity.Created,
+                Updated = TrashSubCategoryEntity.Updated,
+                Users = TrashSubCategoryEntity.Users.Select(x => x.ID).ToList(),
+                SubImageAnnotation = TrashSubCategoryEntity.SubImageAnnotationID,
+                TrashSubCategoryLabel = TrashSubCategoryEntity.TrashSubCategory
+            };
+
+            return Results.Ok(trashSubCategory);
+        }).Produces<TrashSubCategoryDTO>();
     }
 }

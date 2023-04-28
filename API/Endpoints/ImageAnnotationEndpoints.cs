@@ -8,6 +8,11 @@ public static class ImageAnnotationEndpoints
 {
     public static void MapImageAnnotationEndpoints(this WebApplication app)
     {
+        app.MapPost("/imageannotations/{id}/voteskip", (Guid id, DataContext dataContext) =>
+        {
+            var imageAnnotationEntity = dataContext.ImageAnnotations.FirstOrDefault(x => x.ID == id);
+            return Results.BadRequest();
+        }).Produces<ImageAnnotationDTO>().RequireAuthorization();
 
         app.MapGet("/imageannotations/{id}", (Guid id, DataContext dataContext) =>
         {
@@ -20,6 +25,7 @@ public static class ImageAnnotationEndpoints
                     Created = imageAnnotationEntity.Created,
                     Updated = imageAnnotationEntity.Updated,
                     Image = imageAnnotationEntity.ImageID,
+                    Skipped = imageAnnotationEntity.VoteSkipped.Select(x => x.ID).ToList(),
                     BackgroundClassifications = imageAnnotationEntity.BackgroundClassifications.Select(x => x.ID).ToList(),
                     BackgroundClassificationConsensus = imageAnnotationEntity.BackgroundClassificationConsensus?.ID,
                     ContextClassifications = imageAnnotationEntity.ContextClassifications.Select(x => x.ID).ToList(),
