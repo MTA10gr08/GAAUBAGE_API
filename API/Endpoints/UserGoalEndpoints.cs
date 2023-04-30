@@ -2,6 +2,7 @@ using System.Security.Claims;
 using API.DTOs.Annotation;
 using API.DTOs.Gamification;
 using API.Entities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace API.Endpoints;
@@ -32,25 +33,25 @@ public static class UserGoalEndpoints
                 {
                     TaskType = "CC",
                     TotalToDo = 10u,
-                    Done = (uint)(dataContext.Users.Find(userID)?.BackgroundClassifications.Count(x => x.Created.Date >= startOfDayUtc) ?? 0),
+                    Done = (uint)(dataContext.Users.Find(userID)?.BackgroundClassifications.Count(x => EF.Functions.DateDiffDay(x.Created, startOfDayUtc) >= 0) ?? 0),
                 },
                 new()
                 {
                     TaskType = "SI",
                     TotalToDo = 10u,
-                    Done = (uint)(dataContext.Users.Find(userID)?.SubImageAnnotationGroups.Count(x => x.Created.Date >= startOfDayUtc) ?? 0),
+                    Done = (uint)(dataContext.Users.Find(userID)?.SubImageAnnotationGroups.Count(x => EF.Functions.DateDiffDay(x.Created, startOfDayUtc) >= 0) ?? 0),
                 },
                 new()
                 {
                     TaskType = "TC",
                     TotalToDo = 5u,
-                    Done = (uint)(dataContext.Users.Find(userID)?.TrashSubCategories.Count(x => x.Created.Date >= startOfDayUtc) ?? 0),
+                    Done = (uint)(dataContext.Users.Find(userID)?.TrashSubCategories.Count(x => EF.Functions.DateDiffDay(x.Created, startOfDayUtc) >= 0) ?? 0),
                 },
                 new()
                 {
                     TaskType = "Se",
                     TotalToDo = 5u,
-                    Done = (uint)(dataContext.Users.Find(userID)?.Segmentations.Count(x => x.Created.Date >= startOfDayUtc) ?? 0),
+                    Done = (uint)(dataContext.Users.Find(userID)?.Segmentations.Count(x => EF.Functions.DateDiffDay(x.Created, startOfDayUtc) >= 0) ?? 0),
                 }
             };
 

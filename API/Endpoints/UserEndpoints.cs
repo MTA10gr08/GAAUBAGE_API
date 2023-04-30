@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using API.DTOs.Annotation;
 using API.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Endpoints;
 public static class UserEndpoints
@@ -41,7 +42,17 @@ public static class UserEndpoints
                 return Results.BadRequest("User not found");
             }
 
-            var userEntity = dataContext.Users.FirstOrDefault(x => x.ID == user.ID);
+            var userEntity = dataContext.Users
+                .Include(x => x.Images)
+                .Include(x => x.VoteSkipped)
+                .Include(x => x.BackgroundClassifications)
+                .Include(x => x.ContextClassifications)
+                .Include(x => x.SubImageAnnotationGroups)
+                .Include(x => x.TrashSubCategories)
+                .Include(x => x.TrashSuperCategories)
+                .Include(x => x.Segmentations)
+                .FirstOrDefault(x => x.ID == user.ID);
+            
             if (userEntity != null)
             {
                 var userDTO = new UserDTO
