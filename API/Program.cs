@@ -109,12 +109,13 @@ app.MapContextClassificationEndpoints();
 app.MapBackgroundclassifiCationEndpoints();
 app.MapSubImageEndpoints();
 app.MapTrashSubCatagoryEndpoints();
-//app.MapTrashSuperCategoryEndpoints();
-//app.MapLeaderboardEndpoints();
-//app.MapImageAnnotationEndpoints();
-//app.MapSegmentationEndpoints();
-//app.MapUserGoalEndpoints();
-//app.MapCommunityGoalEndpoints();
+app.MapTrashSuperCategoryEndpoints();
+app.MapLeaderboardEndpoints();
+app.MapImageAnnotationEndpoints();
+app.MapSegmentationEndpoints();
+app.MapUserGoalEndpoints();
+app.MapCommunityGoalEndpoints();
+app.MapDatabaseInfoEndpoints();
 
 if (builder.Environment.IsDevelopment())
 {

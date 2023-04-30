@@ -95,7 +95,7 @@ public static class TrashSuperCategoryEndpoints
             if (subImageAnnotation == null)
                 return Results.NotFound("SubImageAnnotation not found");
 
-            if (subImageAnnotation.TrashSubCategories.Any(x => x.Users.Any(z => z.ID == userID)))
+            if (subImageAnnotation.TrashSuperCategories.Any(x => x.Users.Any(z => z.ID == userID)))
                 return Results.BadRequest("User has already submitted a BackgroundClassification for this image");
 
             var label = trashSuperCategory.TrashSuperCategoryLabel;

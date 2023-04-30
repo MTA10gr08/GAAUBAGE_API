@@ -14,16 +14,34 @@ public static class UserEndpoints
             return Results.Ok(tokenProvider.GenerateToken(createdUser.ID, Role.User, DateTime.Now.AddYears(1)));
         }).Produces<string>();
 
-        app.MapPost("/users/admin", (UserDTO user, DataContext dataContext, TokenProvider tokenProvider, ClaimsPrincipal claims) =>
+        app.MapPost("/users/admin", (UserDTO user, DataContext dataContext, TokenProvider tokenProvider) =>
         {
             var createdUser = dataContext.Users.Add(new UserEntity { Alias = user.Alias, Tag = dataContext.Users.Count(x => x.Tag == "Narr") < dataContext.Users.Count(x => x.Tag == "Blap") ? "Narr" : "Blap" }).Entity;
             dataContext.SaveChanges();
             return Results.Ok(tokenProvider.GenerateToken(createdUser.ID, Role.Admin, DateTime.Now.AddYears(1)));
         }).Produces<string>().RequireHost("localhost");
 
-        app.MapGet("/users/{id}", (Guid id, DataContext dataContext) =>
+        app.MapGet("/users/me", (DataContext dataContext, ClaimsPrincipal claims) =>
         {
-            var userEntity = dataContext.Users.FirstOrDefault(x => x.ID == id);
+            var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+            {
+                return Results.Unauthorized();
+            }
+
+            if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
+            {
+                return Results.BadRequest("Invalid user ID format");
+            }
+
+            var user = dataContext.Users.Find(userID);
+            if (user == null)
+            {
+                return Results.BadRequest("User not found");
+            }
+
+            var userEntity = dataContext.Users.FirstOrDefault(x => x.ID == user.ID);
             if (userEntity != null)
             {
                 var userDTO = new UserDTO
