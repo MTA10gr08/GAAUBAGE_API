@@ -4,6 +4,7 @@ using API.DTOs.Annotation;
 using API.Entities;
 using Microsoft.EntityFrameworkCore;
 
+namespace API.Endpoints;
 public static class TrashSubCategoryEndpoints
 {
     public static void MapTrashSubCatagoryEndpoints(this WebApplication app)
@@ -136,7 +137,7 @@ public static class TrashSubCategoryEndpoints
             return Results.Ok();
         });
 
-        app.MapGet("imageannotations/subimageannotations/trashsubcategories/{id}", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, TrashSubCategoryDTO trashSubCategory) =>
+        app.MapGet("imageannotations/subimageannotations/trashsubcategories/{id}/", async (Guid id, DataContext dataContext, ClaimsPrincipal claims) =>
         {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -158,7 +159,7 @@ public static class TrashSubCategoryEndpoints
             if (TrashSubCategoryEntity == null)
                 return Results.NotFound("TrashSubCategory not found");
 
-            var TrashSubCategory = new TrashSubCategoryDTO(){
+            var trashSubCategory = new TrashSubCategoryDTO(){
                 ID = TrashSubCategoryEntity.ID,
                 Created = TrashSubCategoryEntity.Created,
                 Updated = TrashSubCategoryEntity.Updated,

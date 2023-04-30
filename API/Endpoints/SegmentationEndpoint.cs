@@ -5,6 +5,7 @@ using API.Entities;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
 
+namespace API.Endpoints;
 public static class SegmentationEndpoints
 {
     public static void MapSegmentationEndpoints(this WebApplication app)

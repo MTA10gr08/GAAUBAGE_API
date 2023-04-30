@@ -4,6 +4,7 @@ using API.DTOs.Annotation;
 using API.Entities;
 using Microsoft.EntityFrameworkCore;
 
+namespace API.Endpoints;
 public static class TrashSuperCategoryEndpoints
 {
     public static void MapTrashSuperCategoryEndpoints(this WebApplication app)
