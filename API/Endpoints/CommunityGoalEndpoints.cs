@@ -34,29 +34,29 @@ public static class CommunityGoalEndpoints
                 {
                     TaskType = "CC",
                     TotalToDo = 200u,
-                    DoneAll = (uint)dataContext.BackgroundClassifications.Count(x => EF.Functions.DateDiffDay(x.Created, startOfWeekUtc) >= 0),
-                    DoneYou = (uint)dataContext.BackgroundClassifications.Count(x => EF.Functions.DateDiffDay(x.Created, startOfWeekUtc) >= 0 && x.Users.Any(y => y.ID == userID))
+                    DoneAll = (uint)dataContext.BackgroundClassifications.AsEnumerable().Count(x => x.Created.Date >= startOfWeekUtc.Date),
+                    DoneYou = (uint)dataContext.BackgroundClassifications.AsEnumerable().Count(x => x.Created.Date >= startOfWeekUtc.Date && x.Users.Any(y => y.ID == userID))
                 }),
                 1 => Results.Ok(new CommunityGoalDTO()
                 {
                     TaskType = "SI",
                     TotalToDo = 200u,
-                    DoneAll = (uint)dataContext.SubImageGroups.Count(x => EF.Functions.DateDiffDay(x.Created, startOfWeekUtc) >= 0),
-                    DoneYou = (uint)dataContext.SubImageGroups.Count(x => EF.Functions.DateDiffDay(x.Created, startOfWeekUtc) >= 0 && x.Users.Any(y => y.ID == userID))
+                    DoneAll = (uint)dataContext.SubImageGroups.AsEnumerable().Count(x => x.Created.Date >= startOfWeekUtc.Date),
+                    DoneYou = (uint)dataContext.SubImageGroups.AsEnumerable().Count(x => x.Created.Date >= startOfWeekUtc.Date && x.Users.Any(y => y.ID == userID))
                 }),
                 2 => Results.Ok(new CommunityGoalDTO()
                 {
                     TaskType = "TC",
                     TotalToDo = 100u,
-                    DoneAll = (uint)dataContext.TrashSubCategories.Count(x => EF.Functions.DateDiffDay(x.Created, startOfWeekUtc) >= 0),
-                    DoneYou = (uint)dataContext.TrashSubCategories.Count(x => EF.Functions.DateDiffDay(x.Created, startOfWeekUtc) >= 0 && x.Users.Any(y => y.ID == userID))
+                    DoneAll = (uint)dataContext.TrashSubCategories.AsEnumerable().Count(x => x.Created.Date >= startOfWeekUtc.Date),
+                    DoneYou = (uint)dataContext.TrashSubCategories.AsEnumerable().Count(x => x.Created.Date >= startOfWeekUtc.Date && x.Users.Any(y => y.ID == userID))
                 }),
                 3 => Results.Ok(new CommunityGoalDTO()
                 {
                     TaskType = "Se",
                     TotalToDo = 100u,
-                    DoneAll = (uint)dataContext.Segmentations.Count(x => EF.Functions.DateDiffDay(x.Created, startOfWeekUtc) >= 0),
-                    DoneYou = (uint)dataContext.Segmentations.Count(x => EF.Functions.DateDiffDay(x.Created, startOfWeekUtc) >= 0 && x.User.ID == userID)
+                    DoneAll = (uint)dataContext.Segmentations.AsEnumerable().Count(x => x.Created.Date >= startOfWeekUtc.Date),
+                    DoneYou = (uint)dataContext.Segmentations.AsEnumerable().Count(x => x.Created.Date >= startOfWeekUtc.Date && x.User.ID == userID)
                 }),
                 _ => Results.BadRequest("How did you get here?"),
             };

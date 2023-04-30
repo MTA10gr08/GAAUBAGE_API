@@ -52,7 +52,7 @@ public static class UserEndpoints
                 .Include(x => x.TrashSuperCategories)
                 .Include(x => x.Segmentations)
                 .FirstOrDefault(x => x.ID == user.ID);
-            
+
             if (userEntity != null)
             {
                 var userDTO = new UserDTO

@@ -20,7 +20,12 @@ public static class UserGoalEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
-            var user = dataContext.Users.Find(userID);
+            var user = dataContext.Users
+            .Include(x => x.BackgroundClassifications)
+            .Include(x => x.SubImageAnnotationGroups)
+            .Include(x => x.TrashSubCategories)
+            .Include(x => x.Segmentations)
+            .FirstOrDefault(x => x.ID == userID);
             if (user == null)
                 return Results.BadRequest("User not found");
 
@@ -33,25 +38,25 @@ public static class UserGoalEndpoints
                 {
                     TaskType = "CC",
                     TotalToDo = 10u,
-                    Done = (uint)(dataContext.Users.Find(userID)?.BackgroundClassifications.Count(x => EF.Functions.DateDiffDay(x.Created, startOfDayUtc) >= 0) ?? 0),
+                    Done = (uint)user.BackgroundClassifications.Count(x => x.Created.Date >= startOfDayUtc),
                 },
                 new()
                 {
                     TaskType = "SI",
                     TotalToDo = 10u,
-                    Done = (uint)(dataContext.Users.Find(userID)?.SubImageAnnotationGroups.Count(x => EF.Functions.DateDiffDay(x.Created, startOfDayUtc) >= 0) ?? 0),
+                    Done = (uint)user.SubImageAnnotationGroups.Count(x => x.Created.Date >= startOfDayUtc),
                 },
                 new()
                 {
                     TaskType = "TC",
                     TotalToDo = 5u,
-                    Done = (uint)(dataContext.Users.Find(userID)?.TrashSubCategories.Count(x => EF.Functions.DateDiffDay(x.Created, startOfDayUtc) >= 0) ?? 0),
+                    Done = (uint)user.TrashSubCategories.Count(x => x.Created.Date >= startOfDayUtc),
                 },
                 new()
                 {
                     TaskType = "Se",
                     TotalToDo = 5u,
-                    Done = (uint)(dataContext.Users.Find(userID)?.Segmentations.Count(x => EF.Functions.DateDiffDay(x.Created, startOfDayUtc) >= 0) ?? 0),
+                    Done = (uint)user.Segmentations.Count(x => x.Created.Date >= startOfDayUtc),
                 }
             };
 
