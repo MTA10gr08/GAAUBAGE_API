@@ -137,7 +137,7 @@ public static class TrashSubCategoryEndpoints
             return Results.Ok();
         });
 
-        app.MapGet("imageannotations/subimageannotations/trashsubcategories/{id}/", async (Guid id, DataContext dataContext, ClaimsPrincipal claims) =>
+        app.MapGet("imageannotations/subimageannotations/trashsubcategories/{id}", async (Guid id, DataContext dataContext, ClaimsPrincipal claims) =>
         {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
