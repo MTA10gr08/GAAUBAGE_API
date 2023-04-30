@@ -18,14 +18,3 @@ public class UserDTO : BaseDTO
     [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> TrashSubCategories { get; set; } = new List<Guid>();
     [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> Segmentations { get; set; } = new List<Guid>();
 }
-/*
-    public string Alias { get; set; }
-    public string Tag { get; set; }
-    public ICollection<ImageEntity> Images { get; set; } = new HashSet<ImageEntity>();
-    public ICollection<BackgroundClassificationLabelEntity> BackgroundClassificationLabels { get; set; } = new HashSet<BackgroundClassificationLabelEntity>();
-    public ICollection<ContextClassificationEntity> ContextClassifications { get; set; } = new HashSet<ContextClassificationEntity>();
-    public ICollection<SubImageGroupEntity> SubImageGroups { get; set; } = new HashSet<SubImageGroupEntity>();
-    public ICollection<TrashSuperCategoryEntity> TrashSuperCategories { get; set; } = new HashSet<TrashSuperCategoryEntity>();
-    public ICollection<TrashSubCategoryEntity> TrashSubCategories { get; set; } = new HashSet<TrashSubCategoryEntity>();
-    public ICollection<SegmentationEntity> Segmentations { get; set; } = new HashSet<SegmentationEntity>();
-    */
