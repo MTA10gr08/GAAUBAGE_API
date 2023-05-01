@@ -19,8 +19,9 @@ public static class TrashSuperCategoryEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
-            SubImageAnnotationEntity? nextSuperImageAnnotation = null;
+            SubImageAnnotationEntity? nextSubImageAnnotation = null;
 
+            int priority = 0;
             foreach (var subImageAnnotation in dataContext
                 .SubImageAnnotations
                 .Include(x => x.SubImageAnnotationGroup)
@@ -30,43 +31,66 @@ public static class TrashSuperCategoryEndpoints
                 .Include(x => x.TrashSuperCategories)
                 .ThenInclude(x => x.Users)
                 .AsEnumerable()
-                .Where(x => x.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == x.SubImageAnnotationGroup 
+                .Where(x => (x.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == x.SubImageAnnotationGroup
+                            || x.SubImageAnnotationGroup.Users.Any(y => y.ID == userID))
                             && !x.TrashSuperCategories.Any(y => y.Users.Any(z => z.ID == userID))))
             {
-                if (subImageAnnotation.IsInProgress)
+                bool consensus = subImageAnnotation.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == subImageAnnotation.SubImageAnnotationGroup;
+                bool userInGroup = subImageAnnotation.SubImageAnnotationGroup.Users.Any(y => y.ID == userID);
+
+
+                if (consensus && subImageAnnotation.IsInProgress)
                 {
-                    nextSuperImageAnnotation = subImageAnnotation;
+                    priority = 6;
+                    nextSubImageAnnotation = subImageAnnotation;
                     break;
                 }
-
-                if (!subImageAnnotation.IsComplete)
+                else if (consensus && !subImageAnnotation.IsInProgress && priority < 5)
                 {
-                    nextSuperImageAnnotation = subImageAnnotation;
+                    priority = 5;
+                    nextSubImageAnnotation = subImageAnnotation;
                 }
-
-                nextSuperImageAnnotation ??= subImageAnnotation;
+                else if (consensus && subImageAnnotation.IsComplete && priority < 4)
+                {
+                    priority = 4;
+                    nextSubImageAnnotation = subImageAnnotation;
+                }
+                else if (userInGroup && subImageAnnotation.IsInProgress && priority < 3)
+                {
+                    priority = 3;
+                    nextSubImageAnnotation = subImageAnnotation;
+                }
+                else if (userInGroup && !subImageAnnotation.IsInProgress && priority < 2)
+                {
+                    priority = 2;
+                    nextSubImageAnnotation = subImageAnnotation;
+                }else if (!nextSubImageAnnotation && priority < 1)
+                {
+                    priority = 1;
+                    nextSubImageAnnotation = subImageAnnotation;
+                }
             }
 
-            if (nextSuperImageAnnotation == null) return Results.NotFound();
+            if (nextSubImageAnnotation == null) return Results.NotFound();
 
             var subImageAnnotationDTO = new SubImageAnnotationDTO
             {
-                ID = nextSuperImageAnnotation.ID,
-                Created = nextSuperImageAnnotation.Created,
-                Updated = nextSuperImageAnnotation.Updated,
-                Image = nextSuperImageAnnotation.ImageID,
-                X = nextSuperImageAnnotation.X,
-                Y = nextSuperImageAnnotation.Y,
-                Width = nextSuperImageAnnotation.Width,
-                Height = nextSuperImageAnnotation.Height,
-                SubImageAnnotationGroup = nextSuperImageAnnotation.SubImageAnnotationGroup.ID,
-                TrashSubCategories = nextSuperImageAnnotation.TrashSubCategories.Select(x => x.ID).ToList(),
-                TrashSubCategoriesConsensus = nextSuperImageAnnotation.TrashSubCategoriesConsensus?.ID,
-                TrashSuperCategories = nextSuperImageAnnotation.TrashSuperCategories.Select(x => x.ID).ToList(),
-                TrashSuperCategoriesConsensus = nextSuperImageAnnotation.TrashSuperCategoriesConsensus?.ID,
-                Segmentations = nextSuperImageAnnotation.Segmentations.Select(x => x.ID).ToList(),
-                IsComplete = nextSuperImageAnnotation.IsComplete,
-                IsInProgress = nextSuperImageAnnotation.IsInProgress,
+                ID = nextSubImageAnnotation.ID,
+                Created = nextSubImageAnnotation.Created,
+                Updated = nextSubImageAnnotation.Updated,
+                Image = nextSubImageAnnotation.ImageID,
+                X = nextSubImageAnnotation.X,
+                Y = nextSubImageAnnotation.Y,
+                Width = nextSubImageAnnotation.Width,
+                Height = nextSubImageAnnotation.Height,
+                SubImageAnnotationGroup = nextSubImageAnnotation.SubImageAnnotationGroup.ID,
+                TrashSubCategories = nextSubImageAnnotation.TrashSubCategories.Select(x => x.ID).ToList(),
+                TrashSubCategoriesConsensus = nextSubImageAnnotation.TrashSubCategoriesConsensus?.ID,
+                TrashSuperCategories = nextSubImageAnnotation.TrashSuperCategories.Select(x => x.ID).ToList(),
+                TrashSuperCategoriesConsensus = nextSubImageAnnotation.TrashSuperCategoriesConsensus?.ID,
+                Segmentations = nextSubImageAnnotation.Segmentations.Select(x => x.ID).ToList(),
+                IsComplete = nextSubImageAnnotation.IsComplete,
+                IsInProgress = nextSubImageAnnotation.IsInProgress,
             };
 
             return Results.Ok(subImageAnnotationDTO);
@@ -86,11 +110,11 @@ public static class TrashSuperCategoryEndpoints
             if (user == null)
                 return Results.BadRequest("User not found");
 
-            var subImageAnnotation = await dataContext
+            var subImageAnnotation = dataContext
                 .SubImageAnnotations
-                .Include(x => x.TrashSubCategories)
+                .Include(x => x.TrashSuperCategories)
                 .ThenInclude(x => x.Users)
-                .FirstOrDefaultAsync(x => x.ID == id);
+                .FirstOrDefault(x => x.ID == id);
 
             if (subImageAnnotation == null)
                 return Results.NotFound("SubImageAnnotation not found");

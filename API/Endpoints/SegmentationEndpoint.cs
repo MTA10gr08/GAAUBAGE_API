@@ -10,9 +10,9 @@ public static class SegmentationEndpoints
 {
     public static void MapSegmentationEndpoints(this WebApplication app)
     {
-        app.MapGet("/imageannotations/subimageannotations/segmentations/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("/imageannotations/subimageannotations/segmentations/next", (DataContext dataContext, ClaimsPrincipal claims) =>
         {
-            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+            var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
                 return Results.Unauthorized();
@@ -20,10 +20,17 @@ public static class SegmentationEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
+            var user = dataContext.Users.SingleOrDefault(x => x.ID == userID);
+            if (user == null)
+                return Results.BadRequest("User not found");
+
             SubImageAnnotationEntity? nextSubImageAnnotation = null;
 
+            int priority = 0;
             foreach (var subImageAnnotation in dataContext
                 .SubImageAnnotations
+                .Include(x => x.SubImageAnnotationGroup)
+                .ThenInclude(x => x.Users)
                 .Include(x => x.SubImageAnnotationGroup)
                 .ThenInclude(x => x.ImageAnnotation)
                 .ThenInclude(x => x.SubImageAnnotationGroups)
@@ -32,24 +39,47 @@ public static class SegmentationEndpoints
                 .ThenInclude(x => x.Users)
                 .Include(x => x.TrashSubCategories)
                 .ThenInclude(x => x.Users)
+                .Include(x => x.Segmentations)
                 .AsEnumerable()
-                .Where(x => x.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == x.SubImageAnnotationGroup
-                            && !x.Segmentations.Any(y => y.UserID == userID)
+                .Where(x => (x.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == x.SubImageAnnotationGroup
+                            || x.SubImageAnnotationGroup.Users.Any(y => y.ID == userID))
+                            && !x.Segmentations.Any(y => y.UserID == user.ID)
                             && x.TrashSubCategoriesConsensus
                             && x.TrashSuperCategoriesConsensus))
             {
-                if (subImageAnnotation.IsInProgress)
+                bool consensus = subImageAnnotation.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == subImageAnnotation.SubImageAnnotationGroup;
+                bool userInGroup = subImageAnnotation.SubImageAnnotationGroup.Users.Any(y => y.ID == userID);
+
+                if (consensus && subImageAnnotation.IsInProgress)
                 {
+                    priority = 6;
                     nextSubImageAnnotation = subImageAnnotation;
                     break;
                 }
-
-                if (!subImageAnnotation.IsComplete)
+                else if (consensus && !subImageAnnotation.IsInProgress && priority < 5)
                 {
+                    priority = 5;
                     nextSubImageAnnotation = subImageAnnotation;
                 }
-
-                nextSubImageAnnotation ??= subImageAnnotation;
+                else if (consensus && subImageAnnotation.IsComplete && priority < 4)
+                {
+                    priority = 4;
+                    nextSubImageAnnotation = subImageAnnotation;
+                }
+                else if (userInGroup && subImageAnnotation.IsInProgress && priority < 3)
+                {
+                    priority = 3;
+                    nextSubImageAnnotation = subImageAnnotation;
+                }
+                else if (userInGroup && !subImageAnnotation.IsInProgress && priority < 2)
+                {
+                    priority = 2;
+                    nextSubImageAnnotation = subImageAnnotation;
+                }else if (!nextSubImageAnnotation && priority < 1)
+                {
+                    priority = 1;
+                    nextSubImageAnnotation = subImageAnnotation;
+                }
             }
 
             if (nextSubImageAnnotation == null) return Results.NotFound();

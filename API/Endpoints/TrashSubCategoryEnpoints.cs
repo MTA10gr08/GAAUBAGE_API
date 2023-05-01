@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Linq;
 using System.Security.Claims;
 using API.DTOs.Annotation;
@@ -21,6 +22,7 @@ public static class TrashSubCategoryEndpoints
 
             SubImageAnnotationEntity? nextSubImageAnnotation = null;
 
+            int priority = 0;
             foreach (var subImageAnnotation in dataContext
                 .SubImageAnnotations
                 .Include(x => x.SubImageAnnotationGroup)
@@ -30,21 +32,43 @@ public static class TrashSubCategoryEndpoints
                 .Include(x => x.TrashSubCategories)
                 .ThenInclude(x => x.Users)
                 .AsEnumerable()
-                .Where(x => x.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == x.SubImageAnnotationGroup
+                .Where(x => (x.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == x.SubImageAnnotationGroup
+                            || x.SubImageAnnotationGroup.Users.Any(y => y.ID == userID))
                             && !x.TrashSubCategories.Any(y => y.Users.Any(z => z.ID == userID))))
             {
-                if (subImageAnnotation.IsInProgress)
+                bool consensus = subImageAnnotation.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == subImageAnnotation.SubImageAnnotationGroup;
+                bool userInGroup = subImageAnnotation.SubImageAnnotationGroup.Users.Any(y => y.ID == userID);
+
+                if (consensus && subImageAnnotation.IsInProgress)
                 {
+                    priority = 6;
                     nextSubImageAnnotation = subImageAnnotation;
                     break;
                 }
-
-                if (!subImageAnnotation.IsComplete)
+                else if (consensus && !subImageAnnotation.IsInProgress && priority < 5)
                 {
+                    priority = 5;
                     nextSubImageAnnotation = subImageAnnotation;
                 }
-
-                nextSubImageAnnotation ??= subImageAnnotation;
+                else if (consensus && subImageAnnotation.IsComplete && priority < 4)
+                {
+                    priority = 4;
+                    nextSubImageAnnotation = subImageAnnotation;
+                }
+                else if (userInGroup && subImageAnnotation.IsInProgress && priority < 3)
+                {
+                    priority = 3;
+                    nextSubImageAnnotation = subImageAnnotation;
+                }
+                else if (userInGroup && !subImageAnnotation.IsInProgress && priority < 2)
+                {
+                    priority = 2;
+                    nextSubImageAnnotation = subImageAnnotation;
+                }else if (!nextSubImageAnnotation && priority < 1)
+                {
+                    priority = 1;
+                    nextSubImageAnnotation = subImageAnnotation;
+                }
             }
 
             if (nextSubImageAnnotation == null) return Results.NotFound();
@@ -86,11 +110,11 @@ public static class TrashSubCategoryEndpoints
             if (user == null)
                 return Results.BadRequest("User not found");
 
-            var subImageAnnotation = await dataContext
+            var subImageAnnotation = dataContext
                 .SubImageAnnotations
                 .Include(x => x.TrashSubCategories)
                 .ThenInclude(x => x.Users)
-                .FirstOrDefaultAsync(x => x.ID == id);
+                .FirstOrDefault(x => x.ID == id);
 
             if (subImageAnnotation == null)
                 return Results.NotFound("SubImageAnnotation not found");
@@ -159,7 +183,8 @@ public static class TrashSubCategoryEndpoints
             if (TrashSubCategoryEntity == null)
                 return Results.NotFound("TrashSubCategory not found");
 
-            var trashSubCategory = new TrashSubCategoryDTO(){
+            var trashSubCategory = new TrashSubCategoryDTO()
+            {
                 ID = TrashSubCategoryEntity.ID,
                 Created = TrashSubCategoryEntity.Created,
                 Updated = TrashSubCategoryEntity.Updated,

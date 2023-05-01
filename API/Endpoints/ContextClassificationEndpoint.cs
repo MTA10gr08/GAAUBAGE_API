@@ -23,7 +23,13 @@ public static class ContextClassificationEndpoints
             foreach (var imageAnnotation in dataContext
                 .ImageAnnotations
                 .Where(x => !x.ContextClassifications.Any(y => y.Users.Any(w => w.ID == userId)))
-                .Include(x => x.Image))
+                .Include(x => x.Image)
+                .Include(x => x.ContextClassifications)
+                .ThenInclude(x => x.Users)
+                .Include(x => x.BackgroundClassifications)
+                .ThenInclude(x => x.Users)
+                .AsEnumerable()
+                .Where(x => !x.IsSkipped))
             {
                 if (imageAnnotation.IsInProgress)
                 {

@@ -25,7 +25,13 @@ public static class SubImageEndpoints
             foreach (var imageAnnotation in dataContext
                 .ImageAnnotations
                 .Where(x => !x.SubImageAnnotationGroups.Any(y => y.Users.Any(z => z.ID == userId)))
-                .Include(x => x.Image))
+                .Include(x => x.Image)
+                .Include(x => x.ContextClassifications)
+                .ThenInclude(x => x.Users)
+                .Include(x => x.BackgroundClassifications)
+                .ThenInclude(x => x.Users)
+                .AsEnumerable()
+                .Where(x => !x.IsSkipped))
             {
                 if (imageAnnotation.IsInProgress)
                 {

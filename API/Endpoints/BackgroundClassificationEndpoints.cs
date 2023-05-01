@@ -23,7 +23,13 @@ public static class BackgroundclassifiCationEndpoints
             foreach (var imageAnnotation in dataContext
                 .ImageAnnotations
                 .Where(x => !x.BackgroundClassifications.Any(y => y.Users.Any(w => w.ID == userId)))
-                .Include(x => x.Image))
+                .Include(x => x.Image)
+                .Include(x => x.ContextClassifications)
+                .ThenInclude(x => x.Users)
+                .Include(x => x.BackgroundClassifications)
+                .ThenInclude(x => x.Users)
+                .AsEnumerable()
+                .Where(x => !x.IsSkipped))
             {
                 if (imageAnnotation.IsInProgress)
                 {
@@ -76,13 +82,13 @@ public static class BackgroundclassifiCationEndpoints
             if  (user == null)
                 return Results.BadRequest("User not found");
 
-            var imageAnnotation = dataContext
+            var imageAnnotation = await dataContext
                 .ImageAnnotations
                 .Include(x => x.BackgroundClassifications)
                 .ThenInclude(x => x.Users)
                 .Include(x => x.BackgroundClassifications)
                 .ThenInclude(x => x.BackgroundClassificationStrings)
-                .FirstOrDefault(x => x.ID == id);
+                .FirstOrDefaultAsync(x => x.ID == id);
 
             if (imageAnnotation == null)
                 return Results.NotFound("ImageAnnotation not found");

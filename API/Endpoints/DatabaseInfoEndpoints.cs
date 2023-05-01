@@ -23,11 +23,15 @@ public static class DatabaseInfoEndpoints
                 .AsEnumerable()
                 .Count(x => x.IsSkipped),
 
+                TotalBackgroundClassifications = (uint)dataContext.BackgroundClassifications.Count(),
+
                 TotalBackgroundClassified = (uint)dataContext.ImageAnnotations
                 .Include(x => x.BackgroundClassifications)
                 .ThenInclude(x => x.Users)
                 .AsEnumerable()
                 .Count(x => x.BackgroundClassificationConsensus != null),
+
+                TotalContextClassifications = (uint)dataContext.ContextClassifications.Count(),
 
                 TotalContextClassified = (uint)dataContext.ImageAnnotations
                 .Include(x => x.ContextClassifications)
@@ -35,13 +39,15 @@ public static class DatabaseInfoEndpoints
                 .AsEnumerable()
                 .Count(x => x.ContextClassificationConsensus != null),
 
-                TotalSubImaged = (uint)dataContext.ImageAnnotations
+                TotalSubImageGroups = (uint)dataContext.SubImageGroups.Count(),
+
+                TotalSubImageGrouped = (uint)dataContext.ImageAnnotations
                 .Include(x => x.SubImageAnnotationGroups)
                 .ThenInclude(x => x.Users)
                 .AsEnumerable()
                 .Count(x => x.SubImageAnnotationGroupConsensus != null),
 
-                TotalSubImages = (uint)dataContext.ImageAnnotations
+                TotalSubImageAnnotations = (uint)dataContext.ImageAnnotations
                 .Include(x => x.SubImageAnnotationGroups)
                 .ThenInclude(x => x.Users)
                 .Include(x => x.SubImageAnnotationGroups)
@@ -49,17 +55,23 @@ public static class DatabaseInfoEndpoints
                 .AsEnumerable()
                 .Sum(x => x.SubImageAnnotationGroups.Sum(y => y.SubImageAnnotations.Count)),
 
+                TotalTrashSubCategorisations = (uint)dataContext.SubImageAnnotations.Count(),
+
                 TotalTrashSubCategorised = (uint)dataContext.SubImageAnnotations
                 .Include(x => x.TrashSubCategories)
                 .ThenInclude(x => x.Users)
                 .AsEnumerable()
                 .Count(x => x.TrashSubCategoriesConsensus != null),
 
+                TotalTrashSuperCategorisations = (uint)dataContext.SubImageAnnotations.Count(),
+
                 TotalTrashSuperCategorised = (uint)dataContext.SubImageAnnotations
                 .Include(x => x.TrashSuperCategories)
                 .ThenInclude(x => x.Users)
                 .AsEnumerable()
                 .Count(x => x.TrashSuperCategoriesConsensus != null),
+
+                TotalSegmentations = (uint)dataContext.Segmentations.Count(),
 
                 TotalSegmentated = (uint)dataContext.SubImageAnnotations.Count(x => x.Segmentations.Any()),
             });

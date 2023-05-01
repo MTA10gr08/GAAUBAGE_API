@@ -65,9 +65,9 @@ public class ImageAnnotationEntity : BaseEntity
     {
         get
         {
-            int total = BackgroundClassifications.Count;
-            double threshold = total * 0.75;
-            return BackgroundClassifications.FirstOrDefault(x => x.Users.Count >= threshold);
+            int total = BackgroundClassifications.Sum(x => x.Users.Count);
+            double threshold = total * 0.5;
+            return total > 3 ? BackgroundClassifications.FirstOrDefault(x => x.Users.Count >= threshold) : null;
         }
     }
 
@@ -76,9 +76,9 @@ public class ImageAnnotationEntity : BaseEntity
     {
         get
         {
-            int total = ContextClassifications.Count;
-            double threshold = total * 0.75;
-            return ContextClassifications.FirstOrDefault(x => x.Users.Count >= threshold);
+            int total = ContextClassifications.Sum(x => x.Users.Count);
+            double threshold = total * 0.5;
+            return total > 3 ? ContextClassifications.FirstOrDefault(x => x.Users.Count >= threshold) : null;
         }
     }
 
@@ -87,9 +87,9 @@ public class ImageAnnotationEntity : BaseEntity
     {
         get
         {
-            int total = SubImageAnnotationGroups.Count;
-            double threshold = total * 0.75;
-            return SubImageAnnotationGroups.FirstOrDefault(x => x.Users.Count >= threshold);
+            int total = SubImageAnnotationGroups.Sum(x => x.Users.Count);
+            double threshold = total * 0.5;
+            return total > 3 ? SubImageAnnotationGroups.FirstOrDefault(x => x.Users.Count >= threshold) : null;
         }
     }
 
@@ -163,9 +163,9 @@ public class SubImageAnnotationEntity : BaseEntity
     {
         get
         {
-            int total = TrashSuperCategories.Count;
-            double threshold = total * 0.75;
-            return TrashSuperCategories.FirstOrDefault(x => x.Users.Count >= threshold);
+            int total = TrashSuperCategories.Sum(x => x.Users.Count);
+            double threshold = total * 0.5;
+            return total > 3 ? TrashSuperCategories.FirstOrDefault(x => x.Users.Count >= threshold) : null;
         }
     }
     public ICollection<TrashSubCategoryEntity> TrashSubCategories { get; set; } = new HashSet<TrashSubCategoryEntity>();
@@ -173,9 +173,9 @@ public class SubImageAnnotationEntity : BaseEntity
     {
         get
         {
-            int total = TrashSubCategories.Count;
-            double threshold = total * 0.75;
-            return TrashSubCategories.FirstOrDefault(x => x.Users.Count >= threshold);
+            int total = TrashSubCategories.Sum(x => x.Users.Count);
+            double threshold = total * 0.5;
+            return total > 3 ? TrashSubCategories.FirstOrDefault(x => x.Users.Count >= threshold) : null;
         }
     }
 
@@ -183,7 +183,7 @@ public class SubImageAnnotationEntity : BaseEntity
 
     public bool IsInProgress => !(TrashSuperCategoriesConsensus && TrashSubCategoriesConsensus)
         && (TrashSuperCategories.Any() || TrashSubCategories.Any());
-    public bool IsComplete => TrashSuperCategoriesConsensus && TrashSubCategoriesConsensus;
+    public bool IsComplete => TrashSuperCategoriesConsensus && TrashSubCategoriesConsensus && Segmentations.Count > 3;
 }
 
 public class TrashSuperCategoryEntity : BaseEntity

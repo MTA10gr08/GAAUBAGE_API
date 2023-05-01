@@ -22,6 +22,44 @@ public static class UserEndpoints
             return Results.Ok(tokenProvider.GenerateToken(createdUser.ID, Role.Admin, DateTime.Now.AddYears(1)));
         }).Produces<string>().RequireHost("localhost");
 
+        app.MapGet("/users", (DataContext dataContext, ClaimsPrincipal claims) => {
+            var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+            {
+                return Results.Unauthorized();
+            }
+
+            if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
+            {
+                return Results.BadRequest("Invalid user ID format");
+            }
+
+            var user = dataContext.Users.Find(userID);
+            if (user == null)
+            {
+                return Results.BadRequest("User not found");
+            }
+
+            return Results.Ok(dataContext.Users.Select(userEntity => new UserDTO(){
+                    ID = userEntity.ID,
+                    Created = userEntity.Created,
+                    Updated = userEntity.Updated,
+                    Alias = userEntity.Alias,
+                    Tag = userEntity.Tag,
+                    Score = userEntity.Score,
+                    Level = userEntity.Level,
+                    Images = userEntity.Images.Select(x => x.ID).ToList(),
+                    Skipped = userEntity.VoteSkipped.Select(x => x.ID).ToList(),
+                    BackgroundClassificationLabels = userEntity.BackgroundClassifications.Select(x => x.ID).ToList(),
+                    ContextClassifications = userEntity.ContextClassifications.Select(x => x.ID).ToList(),
+                    SubImageGroups = userEntity.SubImageAnnotationGroups.Select(x => x.ID).ToList(),
+                    TrashSuperCategories = userEntity.TrashSuperCategories.Select(x => x.ID).ToList(),
+                    TrashSubCategories = userEntity.TrashSubCategories.Select(x => x.ID).ToList(),
+                    Segmentations = userEntity.Segmentations.Select(x => x.ID).ToList(),
+            }));
+        });
+
         app.MapGet("/users/me", (DataContext dataContext, ClaimsPrincipal claims) =>
         {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
