@@ -8,72 +8,72 @@ public static class DatabaseInfoEndpoints
 {
     public static void MapDatabaseInfoEndpoints(this WebApplication app)
     {
-        app.MapGet("/databaseinfo", (DataContext dataContext) =>
+        app.MapGet("/databaseinfo", async (DataContext dataContext) =>
         {
             return Results.Ok(new DatabaseInfoDTO
             {
                 TotalImages = (uint)dataContext.Images.Count(),
 
-                TotalSkipped = (uint)dataContext.ImageAnnotations
+                TotalSkipped = (uint)(await dataContext.ImageAnnotations
                 .Include(x => x.VoteSkipped)
                 .Include(x => x.ContextClassifications)
                 .ThenInclude(x => x.Users)
                 .Include(x => x.SubImageAnnotationGroups)
                 .ThenInclude(x => x.Users)
-                .AsEnumerable()
+                .ToListAsync())
                 .Count(x => x.IsSkipped),
 
-                TotalBackgroundClassifications = (uint)dataContext.BackgroundClassifications.Count(),
+                TotalBackgroundClassifications = (uint)await dataContext.BackgroundClassifications.CountAsync(),
 
-                TotalBackgroundClassified = (uint)dataContext.ImageAnnotations
+                TotalBackgroundClassified = (uint)(await dataContext.ImageAnnotations
                 .Include(x => x.BackgroundClassifications)
                 .ThenInclude(x => x.Users)
-                .AsEnumerable()
+                .ToListAsync())
                 .Count(x => x.BackgroundClassificationConsensus != null),
 
-                TotalContextClassifications = (uint)dataContext.ContextClassifications.Count(),
+                TotalContextClassifications = (uint)await dataContext.ContextClassifications.CountAsync(),
 
-                TotalContextClassified = (uint)dataContext.ImageAnnotations
+                TotalContextClassified = (uint)(await dataContext.ImageAnnotations
                 .Include(x => x.ContextClassifications)
                 .ThenInclude(x => x.Users)
-                .AsEnumerable()
+                .ToListAsync())
                 .Count(x => x.ContextClassificationConsensus != null),
 
-                TotalSubImageGroups = (uint)dataContext.SubImageGroups.Count(),
+                TotalSubImageGroups = (uint)await dataContext.SubImageGroups.CountAsync(),
 
-                TotalSubImageGrouped = (uint)dataContext.ImageAnnotations
+                TotalSubImageGrouped = (uint)(await dataContext.ImageAnnotations
                 .Include(x => x.SubImageAnnotationGroups)
                 .ThenInclude(x => x.Users)
-                .AsEnumerable()
+                .ToListAsync())
                 .Count(x => x.SubImageAnnotationGroupConsensus != null),
 
-                TotalSubImageAnnotations = (uint)dataContext.ImageAnnotations
+                TotalSubImageAnnotations = (uint)(await dataContext.ImageAnnotations
                 .Include(x => x.SubImageAnnotationGroups)
                 .ThenInclude(x => x.Users)
                 .Include(x => x.SubImageAnnotationGroups)
                 .ThenInclude(x => x.SubImageAnnotations)
-                .AsEnumerable()
+                .ToListAsync())
                 .Sum(x => x.SubImageAnnotationGroups.Sum(y => y.SubImageAnnotations.Count)),
 
-                TotalTrashSubCategorisations = (uint)dataContext.SubImageAnnotations.Count(),
+                TotalTrashSubCategorisations = (uint)await dataContext.SubImageAnnotations.CountAsync(),
 
-                TotalTrashSubCategorised = (uint)dataContext.SubImageAnnotations
+                TotalTrashSubCategorised = (uint)(await dataContext.SubImageAnnotations
                 .Include(x => x.TrashSubCategories)
                 .ThenInclude(x => x.Users)
-                .AsEnumerable()
+                .ToListAsync())
                 .Count(x => x.TrashSubCategoriesConsensus != null),
 
-                TotalTrashSuperCategorisations = (uint)dataContext.SubImageAnnotations.Count(),
+                TotalTrashSuperCategorisations = (uint)await dataContext.SubImageAnnotations.CountAsync(),
 
-                TotalTrashSuperCategorised = (uint)dataContext.SubImageAnnotations
+                TotalTrashSuperCategorised = (uint)(await dataContext.SubImageAnnotations
                 .Include(x => x.TrashSuperCategories)
                 .ThenInclude(x => x.Users)
-                .AsEnumerable()
+                .ToListAsync())
                 .Count(x => x.TrashSuperCategoriesConsensus != null),
 
-                TotalSegmentations = (uint)dataContext.Segmentations.Count(),
+                TotalSegmentations = (uint)await dataContext.Segmentations.CountAsync(),
 
-                TotalSegmentated = (uint)dataContext.SubImageAnnotations.Count(x => x.Segmentations.Any()),
+                TotalSegmentated = (uint)await dataContext.SubImageAnnotations.CountAsync(x => x.Segmentations.Any()),
             });
         }).Produces<DatabaseInfoDTO>();
     }

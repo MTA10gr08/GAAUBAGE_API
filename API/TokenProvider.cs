@@ -31,8 +31,6 @@ public class TokenProvider
 
     public string GenerateToken(Guid nameIdentifier, Role role, DateTime expires)
     {
-        Console.WriteLine("jwtSettings.Key");
-        Console.WriteLine(jwtSettings.Key);
         var test = Encoding.UTF8.GetBytes(jwtSettings.Key);
         var securityKey = new SymmetricSecurityKey(test);
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);

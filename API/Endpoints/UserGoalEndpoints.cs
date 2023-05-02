@@ -10,7 +10,7 @@ public static class UserGoalEndpoints
 {
     public static void MapUserGoalEndpoints(this WebApplication app)
     {
-        app.MapGet("/usergoal", (DataContext dataContext, ClaimsPrincipal claims) =>
+        app.MapGet("/usergoal", async (DataContext dataContext, ClaimsPrincipal claims) =>
         {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 

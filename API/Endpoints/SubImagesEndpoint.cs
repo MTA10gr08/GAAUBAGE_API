@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Claims;
 using API.DTOs.Annotation;
 using API.Entities;
@@ -8,10 +9,14 @@ using Hungarian = HungarianAlgorithm.HungarianAlgorithm;
 namespace API.Endpoints;
 public static class SubImageEndpoints
 {
-    public static void MapSubImageEndpoints(this WebApplication app)
+    private static readonly SemaphoreSlim SubImagesLock = new SemaphoreSlim(1, 1);
+    public static async void MapSubImageEndpoints(this WebApplication app)
     {
-        app.MapGet("/imageannotations/subimages/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("/imageannotations/subimages/next", async (DataContext dataContext, ClaimsPrincipal user) =>
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -22,7 +27,7 @@ public static class SubImageEndpoints
 
             ImageAnnotationEntity? nextImageAnnotation = null;
 
-            foreach (var imageAnnotation in dataContext
+            var imageAnnotations = await dataContext
                 .ImageAnnotations
                 .Where(x => !x.SubImageAnnotationGroups.Any(y => y.Users.Any(z => z.ID == userId)))
                 .Include(x => x.Image)
@@ -30,8 +35,9 @@ public static class SubImageEndpoints
                 .ThenInclude(x => x.Users)
                 .Include(x => x.BackgroundClassifications)
                 .ThenInclude(x => x.Users)
-                .AsEnumerable()
-                .Where(x => !x.IsSkipped))
+                .ToListAsync();
+
+            foreach (var imageAnnotation in imageAnnotations.Where(x => !x.IsSkipped))
             {
                 if (imageAnnotation.IsInProgress)
                 {
@@ -66,13 +72,15 @@ public static class SubImageEndpoints
                 IsComplete = nextImageAnnotation.IsComplete,
             };
 
+            stopwatch.Stop();
+            Console.WriteLine($"SIn: {stopwatch.Elapsed}");
             return Results.Ok(imageAnnotationDTO);
         }).Produces<ImageAnnotationDTO>();
 
 
-        app.MapGet("imageannotations/subimages", (DataContext dataContext) =>
+        app.MapGet("imageannotations/subimages", async (DataContext dataContext) =>
         {
-            var subImageAnnotations = dataContext.SubImageAnnotations.Select(x => new SubImageAnnotationDTO
+            var subImageAnnotations = await dataContext.SubImageAnnotations.Select(x => new SubImageAnnotationDTO
             {
                 ID = x.ID,
                 Created = x.Created,
@@ -89,13 +97,13 @@ public static class SubImageEndpoints
                 Segmentations = x.Segmentations.Select(y => y.ID).ToList(),
                 IsComplete = x.IsComplete,
                 IsInProgress = x.IsInProgress,
-            }).ToList();
+            }).ToListAsync();
             return Results.Ok(subImageAnnotations);
         }).Produces<List<SubImageAnnotationDTO>>();
 
-        app.MapGet("imageannotations/subimagegroups", (DataContext dataContext) =>
+        app.MapGet("imageannotations/subimagegroups", async (DataContext dataContext) =>
         {
-            var subImageAnnotations = dataContext.SubImageGroups.Select(x => new SubImageAnnotationGroupDTO
+            var subImageAnnotations = await dataContext.SubImageGroups.Select(x => new SubImageAnnotationGroupDTO
             {
                 Users = x.Users.Select(y => y.ID).ToList(),
                 SubImageAnnotations = x.SubImageAnnotations.Select(y => new SubImageAnnotationDTO
@@ -118,13 +126,16 @@ public static class SubImageEndpoints
                     IsInProgress = y.IsInProgress,
                 }).ToList(),
                 ImageAnnotation = x.ImageAnnotationID,
-            }).ToList();
+            }).ToListAsync();
+
             return Results.Ok(subImageAnnotations);
         }).Produces<List<SubImageAnnotationGroupDTO>>();
 
-
         app.MapPost("imageannotations/{id}/subimages", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, SubImageAnnotationGroupDTO subImageAnnotation) =>
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -133,53 +144,50 @@ public static class SubImageEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
-            var user = dataContext.Users.SingleOrDefault(x => x.ID == userID);
+            var user = await dataContext.Users.SingleOrDefaultAsync(x => x.ID == userID);
             if (user == null)
                 return Results.BadRequest("User not found");
 
-            var imageAnnotation = await dataContext
-                .ImageAnnotations
-                .Include(x => x.Image)
-                .Include(x => x.SubImageAnnotationGroups)
-                .ThenInclude(x => x.Users)
-                .Include(x => x.SubImageAnnotationGroups)
-                .ThenInclude(x => x.SubImageAnnotations)
-                .FirstOrDefaultAsync(x => x.ID == id);
-
-            if (imageAnnotation == null)
-                return Results.NotFound("ImageAnnotation not found");
-
-            if (imageAnnotation.SubImageAnnotationGroups.Any(x => x.Users.Any(z => z.ID == userID)))
-                return Results.BadRequest("User has already submitted a subimages for this image");
-
-            /*if (imageAnnotation.ImageID == Guid.Empty)
-                return Results.BadRequest("ImageAnnotation has no image: " + imageAnnotation.Image.ID);*/
-
-            FindAndUpdateBestFitGroup(ref imageAnnotation, ref subImageAnnotation, ref user, 0.5f);
-
-            /*imageAnnotation.SubImageAnnotationGroups.Add(new SubImageAnnotationGroupEntity{
-                ImageAnnotationID = imageAnnotation.ID,
-                Users = new List<UserEntity>{user},
-                SubImageAnnotations = subImageAnnotation.SubImages.Select(x => new SubImageAnnotationEntity{X = x.X, Y = x.Y, Width = x.Width, Height = x.Height}).ToList(),
-            });*/
-
-            try
+            await using (await SubImagesLock.WaitAsyncDisposable())
             {
-                await dataContext.SaveChangesAsync();
-            }
-            catch (DbUpdateException ex)
-            {
-                string errorMessage = $"Failed to save changes: {ex.Message}";
-                var innerEx = ex.InnerException;
-                while (innerEx != null)
+
+                var imageAnnotation = await dataContext
+                    .ImageAnnotations
+                    .Include(x => x.Image)
+                     .Include(x => x.SubImageAnnotationGroups)
+                    .ThenInclude(x => x.Users)
+                    .Include(x => x.SubImageAnnotationGroups)
+                    .ThenInclude(x => x.SubImageAnnotations)
+                    .FirstOrDefaultAsync(x => x.ID == id);
+
+                if (imageAnnotation == null)
+                    return Results.NotFound("ImageAnnotation not found");
+
+                if (imageAnnotation.SubImageAnnotationGroups.Any(x => x.Users.Any(z => z.ID == user.ID)))
+                    return Results.BadRequest("User has already submitted a subimages for this image");
+
+                FindAndUpdateBestFitGroup(ref imageAnnotation, ref subImageAnnotation, ref user, 0.5f);
+
+                try
                 {
-                    errorMessage += $"\nInner exception: {innerEx.Message}";
-                    innerEx = innerEx.InnerException;
+                    await dataContext.SaveChangesAsync();
                 }
-                return Results.BadRequest(errorMessage);
-            }
+                catch (DbUpdateException ex)
+                {
+                    string errorMessage = $"Failed to save changes: {ex.Message}";
+                    var innerEx = ex.InnerException;
+                    while (innerEx != null)
+                    {
+                        errorMessage += $"\nInner exception: {innerEx.Message}";
+                        innerEx = innerEx.InnerException;
+                    }
+                    return Results.BadRequest(errorMessage);
+                }
 
-            return Results.Ok();
+                stopwatch.Stop();
+                Console.WriteLine($"SIp: {stopwatch.Elapsed}");
+                return Results.Ok();
+            }
         });
     }
 

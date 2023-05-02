@@ -10,7 +10,7 @@ public static class CommunityGoalEndpoints
 {
     public static void MapCommunityGoalEndpoints(this WebApplication app)
     {
-        app.MapGet("/communitygoal", (DataContext dataContext, ClaimsPrincipal claims) =>
+        app.MapGet("/communitygoal", async (DataContext dataContext, ClaimsPrincipal claims) =>
         {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -28,35 +28,40 @@ public static class CommunityGoalEndpoints
             int diffToMonday = ((int)now.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
             var startOfWeekUtc = now.AddDays(-diffToMonday).Date.AddHours(12);
 
+            var backgroundClassifications = await dataContext.BackgroundClassifications.ToListAsync();
+            var SubImageGroups = await dataContext.SubImageGroups.ToListAsync();
+            var TrashSubCategories = await dataContext.TrashSubCategories.ToListAsync();
+            var Segmentations = await dataContext.Segmentations.ToListAsync();
+
             return (DateTime.UtcNow.Day % 4) switch
             {
                 0 => Results.Ok(new CommunityGoalDTO()
                 {
                     TaskType = "CC",
                     TotalToDo = 200u,
-                    DoneAll = (uint)dataContext.BackgroundClassifications.AsEnumerable().Count(x => x.Created.Date >= startOfWeekUtc.Date),
-                    DoneYou = (uint)dataContext.BackgroundClassifications.AsEnumerable().Count(x => x.Created.Date >= startOfWeekUtc.Date && x.Users.Any(y => y.ID == userID))
+                    DoneAll = (uint)backgroundClassifications.Count(x => x.Created.Date >= startOfWeekUtc.Date),
+                    DoneYou = (uint)backgroundClassifications.Count(x => x.Created.Date >= startOfWeekUtc.Date && x.Users.Any(y => y.ID == userID))
                 }),
                 1 => Results.Ok(new CommunityGoalDTO()
                 {
                     TaskType = "SI",
                     TotalToDo = 200u,
-                    DoneAll = (uint)dataContext.SubImageGroups.AsEnumerable().Count(x => x.Created.Date >= startOfWeekUtc.Date),
-                    DoneYou = (uint)dataContext.SubImageGroups.AsEnumerable().Count(x => x.Created.Date >= startOfWeekUtc.Date && x.Users.Any(y => y.ID == userID))
+                    DoneAll = (uint)SubImageGroups.Count(x => x.Created.Date >= startOfWeekUtc.Date),
+                    DoneYou = (uint)SubImageGroups.Count(x => x.Created.Date >= startOfWeekUtc.Date && x.Users.Any(y => y.ID == userID))
                 }),
                 2 => Results.Ok(new CommunityGoalDTO()
                 {
                     TaskType = "TC",
                     TotalToDo = 100u,
-                    DoneAll = (uint)dataContext.TrashSubCategories.AsEnumerable().Count(x => x.Created.Date >= startOfWeekUtc.Date),
-                    DoneYou = (uint)dataContext.TrashSubCategories.AsEnumerable().Count(x => x.Created.Date >= startOfWeekUtc.Date && x.Users.Any(y => y.ID == userID))
+                    DoneAll = (uint)TrashSubCategories.Count(x => x.Created.Date >= startOfWeekUtc.Date),
+                    DoneYou = (uint)TrashSubCategories.Count(x => x.Created.Date >= startOfWeekUtc.Date && x.Users.Any(y => y.ID == userID))
                 }),
                 3 => Results.Ok(new CommunityGoalDTO()
                 {
                     TaskType = "Se",
                     TotalToDo = 100u,
-                    DoneAll = (uint)dataContext.Segmentations.AsEnumerable().Count(x => x.Created.Date >= startOfWeekUtc.Date),
-                    DoneYou = (uint)dataContext.Segmentations.AsEnumerable().Count(x => x.Created.Date >= startOfWeekUtc.Date && x.User.ID == userID)
+                    DoneAll = (uint)Segmentations.Count(x => x.Created.Date >= startOfWeekUtc.Date),
+                    DoneYou = (uint)Segmentations.Count(x => x.Created.Date >= startOfWeekUtc.Date && x.User.ID == userID)
                 }),
                 _ => Results.BadRequest("How did you get here?"),
             };

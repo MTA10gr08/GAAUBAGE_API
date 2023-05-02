@@ -8,59 +8,52 @@ public static class UserEndpoints
 {
     public static void MapUserEndpoints(this WebApplication app)
     {
-        app.MapPost("/users", (UserDTO user, DataContext dataContext, TokenProvider tokenProvider) =>
+        app.MapPost("/users", async (UserDTO user, DataContext dataContext, TokenProvider tokenProvider) =>
         {
             var createdUser = dataContext.Users.Add(new UserEntity { Alias = user.Alias, Tag = dataContext.Users.Count(x => x.Tag == "Narr") < dataContext.Users.Count(x => x.Tag == "Blap") ? "Narr" : "Blap" }).Entity;
-            dataContext.SaveChanges();
+            await dataContext.SaveChangesAsync();
             return Results.Ok(tokenProvider.GenerateToken(createdUser.ID, Role.User, DateTime.Now.AddYears(1)));
         }).Produces<string>();
 
-        app.MapPost("/users/admin", (UserDTO user, DataContext dataContext, TokenProvider tokenProvider) =>
+        app.MapPost("/users/admin", async (UserDTO user, DataContext dataContext, TokenProvider tokenProvider) =>
         {
             var createdUser = dataContext.Users.Add(new UserEntity { Alias = user.Alias, Tag = dataContext.Users.Count(x => x.Tag == "Narr") < dataContext.Users.Count(x => x.Tag == "Blap") ? "Narr" : "Blap" }).Entity;
-            dataContext.SaveChanges();
+            await dataContext.SaveChangesAsync();
             return Results.Ok(tokenProvider.GenerateToken(createdUser.ID, Role.Admin, DateTime.Now.AddYears(1)));
         }).Produces<string>().RequireHost("localhost");
 
-        app.MapGet("/users", (DataContext dataContext, ClaimsPrincipal claims) => {
+        app.MapGet("/users", async (DataContext dataContext, ClaimsPrincipal claims) =>
+        {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
-            if (userIdClaim == null)
-            {
-                return Results.Unauthorized();
-            }
+            if (userIdClaim == null) return Results.Unauthorized();
 
-            if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
-            {
-                return Results.BadRequest("Invalid user ID format");
-            }
+            if (!Guid.TryParse(userIdClaim.Value, out Guid userID)) return Results.BadRequest("Invalid user ID format");
 
-            var user = dataContext.Users.Find(userID);
-            if (user == null)
-            {
-                return Results.BadRequest("User not found");
-            }
+            var user = await dataContext.Users.FindAsync(userID);
+            if (user == null) return Results.BadRequest("User not found");
 
-            return Results.Ok(dataContext.Users.Select(userEntity => new UserDTO(){
-                    ID = userEntity.ID,
-                    Created = userEntity.Created,
-                    Updated = userEntity.Updated,
-                    Alias = userEntity.Alias,
-                    Tag = userEntity.Tag,
-                    Score = userEntity.Score,
-                    Level = userEntity.Level,
-                    Images = userEntity.Images.Select(x => x.ID).ToList(),
-                    Skipped = userEntity.VoteSkipped.Select(x => x.ID).ToList(),
-                    BackgroundClassificationLabels = userEntity.BackgroundClassifications.Select(x => x.ID).ToList(),
-                    ContextClassifications = userEntity.ContextClassifications.Select(x => x.ID).ToList(),
-                    SubImageGroups = userEntity.SubImageAnnotationGroups.Select(x => x.ID).ToList(),
-                    TrashSuperCategories = userEntity.TrashSuperCategories.Select(x => x.ID).ToList(),
-                    TrashSubCategories = userEntity.TrashSubCategories.Select(x => x.ID).ToList(),
-                    Segmentations = userEntity.Segmentations.Select(x => x.ID).ToList(),
-            }));
+            return Results.Ok(await dataContext.Users.Select(userEntity => new UserDTO()
+            {
+                ID = userEntity.ID,
+                Created = userEntity.Created,
+                Updated = userEntity.Updated,
+                Alias = userEntity.Alias,
+                Tag = userEntity.Tag,
+                Score = userEntity.Score,
+                Level = userEntity.Level,
+                Images = userEntity.Images.Select(x => x.ID).ToList(),
+                Skipped = userEntity.VoteSkipped.Select(x => x.ID).ToList(),
+                BackgroundClassificationLabels = userEntity.BackgroundClassifications.Select(x => x.ID).ToList(),
+                ContextClassifications = userEntity.ContextClassifications.Select(x => x.ID).ToList(),
+                SubImageGroups = userEntity.SubImageAnnotationGroups.Select(x => x.ID).ToList(),
+                TrashSuperCategories = userEntity.TrashSuperCategories.Select(x => x.ID).ToList(),
+                TrashSubCategories = userEntity.TrashSubCategories.Select(x => x.ID).ToList(),
+                Segmentations = userEntity.Segmentations.Select(x => x.ID).ToList(),
+            }).ToListAsync());
         });
 
-        app.MapGet("/users/me", (DataContext dataContext, ClaimsPrincipal claims) =>
+        app.MapGet("/users/me", async (DataContext dataContext, ClaimsPrincipal claims) =>
         {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -74,13 +67,13 @@ public static class UserEndpoints
                 return Results.BadRequest("Invalid user ID format");
             }
 
-            var user = dataContext.Users.Find(userID);
+            var user = await dataContext.Users.FindAsync(userID);
             if (user == null)
             {
                 return Results.BadRequest("User not found");
             }
 
-            var userEntity = dataContext.Users
+            var userEntity = await dataContext.Users
                 .Include(x => x.Images)
                 .Include(x => x.VoteSkipped)
                 .Include(x => x.BackgroundClassifications)
@@ -89,7 +82,7 @@ public static class UserEndpoints
                 .Include(x => x.TrashSubCategories)
                 .Include(x => x.TrashSuperCategories)
                 .Include(x => x.Segmentations)
-                .FirstOrDefault(x => x.ID == user.ID);
+                .FirstOrDefaultAsync(x => x.ID == user.ID);
 
             if (userEntity != null)
             {

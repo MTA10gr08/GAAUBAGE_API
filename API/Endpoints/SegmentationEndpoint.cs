@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
 using API.DTOs.Annotation;
@@ -8,10 +9,14 @@ using NetTopologySuite.Geometries;
 namespace API.Endpoints;
 public static class SegmentationEndpoints
 {
+    private static readonly SemaphoreSlim SegmentationLock = new SemaphoreSlim(1, 1);
     public static void MapSegmentationEndpoints(this WebApplication app)
     {
-        app.MapGet("/imageannotations/subimageannotations/segmentations/next", (DataContext dataContext, ClaimsPrincipal claims) =>
+        app.MapGet("/imageannotations/subimageannotations/segmentations/next", async (DataContext dataContext, ClaimsPrincipal claims) =>
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -20,14 +25,16 @@ public static class SegmentationEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
-            var user = dataContext.Users.SingleOrDefault(x => x.ID == userID);
+            var user = await dataContext.Users.SingleOrDefaultAsync(x => x.ID == userID);
             if (user == null)
                 return Results.BadRequest("User not found");
 
             SubImageAnnotationEntity? nextSubImageAnnotation = null;
 
-            int priority = 0;
-            foreach (var subImageAnnotation in dataContext
+
+            var dbstopwatch = new Stopwatch();
+            dbstopwatch.Start();
+            var subImageAnnotations = await dataContext
                 .SubImageAnnotations
                 .Include(x => x.SubImageAnnotationGroup)
                 .ThenInclude(x => x.Users)
@@ -40,7 +47,15 @@ public static class SegmentationEndpoints
                 .Include(x => x.TrashSubCategories)
                 .ThenInclude(x => x.Users)
                 .Include(x => x.Segmentations)
-                .AsEnumerable()
+                .AsSplitQuery()
+                .ToListAsync();
+            dbstopwatch.Stop();
+            Console.WriteLine($"SenDB: {dbstopwatch.Elapsed}");
+
+            var sestopwatch = new Stopwatch();
+            sestopwatch.Start();
+            int priority = 0;
+            foreach (var subImageAnnotation in subImageAnnotations
                 .Where(x => (x.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == x.SubImageAnnotationGroup
                             || x.SubImageAnnotationGroup.Users.Any(y => y.ID == userID))
                             && !x.Segmentations.Any(y => y.UserID == user.ID)
@@ -75,12 +90,15 @@ public static class SegmentationEndpoints
                 {
                     priority = 2;
                     nextSubImageAnnotation = subImageAnnotation;
-                }else if (!nextSubImageAnnotation && priority < 1)
+                }
+                else if (!nextSubImageAnnotation && priority < 1)
                 {
                     priority = 1;
                     nextSubImageAnnotation = subImageAnnotation;
                 }
             }
+            sestopwatch.Stop();
+            Console.WriteLine($"SenSE: {sestopwatch.Elapsed}");
 
             if (nextSubImageAnnotation == null) return Results.NotFound();
 
@@ -104,11 +122,16 @@ public static class SegmentationEndpoints
                 IsInProgress = nextSubImageAnnotation.IsInProgress,
             };
 
+            stopwatch.Stop();
+            Console.WriteLine($"Sen: {stopwatch.Elapsed}");
             return Results.Ok(subImageAnnotationDTO);
         }).Produces<SubImageAnnotationDTO>();
 
         app.MapPost("imageannotations/subimageannotations/{id}/segmentations", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, SegmentationDTO segmentation) =>
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -117,9 +140,11 @@ public static class SegmentationEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
-            var user = dataContext.Users.SingleOrDefault(x => x.ID == userID);
+            var user = await dataContext.Users.SingleOrDefaultAsync(x => x.ID == userID);
             if (user == null)
                 return Results.BadRequest("User not found");
+
+            await SegmentationLock.WaitAsync();
 
             var subImageAnnotation = await dataContext
                 .SubImageAnnotations
@@ -129,10 +154,11 @@ public static class SegmentationEndpoints
             if (subImageAnnotation == null)
                 return Results.NotFound("SubImageAnnotation not found");
 
-            if (subImageAnnotation.TrashSubCategories.Any(x => x.Users.Any(z => z.ID == userID)))
+            if (subImageAnnotation.TrashSubCategories.Any(x => x.Users.Any(z => z.ID == user.ID)))
                 return Results.BadRequest("User has already submitted a BackgroundClassification for this image");
 
-            subImageAnnotation.Segmentations.Add(new(){
+            subImageAnnotation.Segmentations.Add(new()
+            {
                 SubImageAnnotationID = subImageAnnotation.ID,
                 UserID = userID,
                 Segmentation = GeometryConverter.ToMultiPolygon(segmentation.SegmentationMultiPolygon)
@@ -154,7 +180,13 @@ public static class SegmentationEndpoints
                 }
                 return Results.BadRequest(errorMessage);
             }
+            finally
+            {
+                SegmentationLock.Release();
+            }
 
+            stopwatch.Stop();
+            Console.WriteLine($"Sep: {stopwatch.Elapsed}");
             return Results.Ok();
         });
     }

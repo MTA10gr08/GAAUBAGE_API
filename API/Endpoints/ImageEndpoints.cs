@@ -25,7 +25,7 @@ public static class ImageEndpoints
                 return Results.BadRequest("Invalid user ID format");
             }
 
-            var user = dataContext.Users.Find(userID);
+            var user = await dataContext.Users.FindAsync(userID);
             if (user == null)
             {
                 return Results.BadRequest("User not found");
@@ -99,9 +99,9 @@ public static class ImageEndpoints
             return Results.Ok();
         });
 
-        app.MapGet("/images/{id}", (Guid id, DataContext dataContext) =>
+        app.MapGet("/images/{id}", async (Guid id, DataContext dataContext) =>
         {
-            var imageEntity = dataContext.Images.FirstOrDefault(x => x.ID == id);
+            var imageEntity = await dataContext.Images.FirstOrDefaultAsync(x => x.ID == id);
             if (imageEntity != null)
             {
                 var imageDTO = new ImageDTO
@@ -119,9 +119,9 @@ public static class ImageEndpoints
             return Results.BadRequest();
         }).Produces<ImageDTO>().RequireAuthorization();
 
-        app.MapGet("/images", (DataContext dataContext) =>
+        app.MapGet("/images", async (DataContext dataContext) =>
         {
-            var imageEntities = dataContext.Images.ToList();
+            var imageEntities = await dataContext.Images.ToListAsync();
             var imageDTOs = imageEntities.ConvertAll(x => new ImageDTO
             {
                 ID = x.ID,

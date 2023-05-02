@@ -120,6 +120,31 @@ public static class GeometryConverter
     }
 }
 
+public static class SemaphoreSlimExtensions
+{
+    private sealed class AsyncSemaphoreReleaser : IAsyncDisposable
+    {
+        private readonly SemaphoreSlim _semaphore;
+
+        public AsyncSemaphoreReleaser(SemaphoreSlim semaphore)
+        {
+            _semaphore = semaphore;
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            _semaphore.Release();
+            await ValueTask.CompletedTask;
+        }
+    }
+
+    public static async ValueTask<IAsyncDisposable> WaitAsyncDisposable(this SemaphoreSlim semaphore, CancellationToken cancellationToken = default)
+    {
+        await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        return new AsyncSemaphoreReleaser(semaphore);
+    }
+}
+
 public static class EnumerableExtensions
 {
     public static T WeightedRandom<T>(this IEnumerable<T> source, Random? random = null)

@@ -8,15 +8,51 @@ public static class ImageAnnotationEndpoints
 {
     public static void MapImageAnnotationEndpoints(this WebApplication app)
     {
-        app.MapPost("/imageannotations/{id}/voteskip", (Guid id, DataContext dataContext) =>
+        app.MapPost("/imageannotations/{id}/voteskip", async (Guid id, DataContext dataContext, ClaimsPrincipal claims) =>
         {
-            var imageAnnotationEntity = dataContext.ImageAnnotations.FirstOrDefault(x => x.ID == id);
-            return Results.BadRequest();
+            var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+                return Results.Unauthorized();
+
+            if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
+                return Results.BadRequest("Invalid user ID format");
+
+            var user = await dataContext.Users.SingleOrDefaultAsync(x => x.ID == userID);
+            if (user == null)
+                return Results.BadRequest("User not found");
+
+            var imageAnnotation = await dataContext.ImageAnnotations.FirstOrDefaultAsync(x => x.ID == id);
+
+            if (imageAnnotation == null)
+                return Results.NotFound("ImageAnnotation not found");
+
+            if (imageAnnotation.VoteSkipped.Any(x => x.ID == user.ID))
+                return Results.BadRequest("User has already vote skipped this annotation");
+
+            imageAnnotation.VoteSkipped.Add(user);
+
+            try
+            {
+                await dataContext.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                string errorMessage = $"Failed to save changes: {ex.Message}";
+                var innerEx = ex.InnerException;
+                while (innerEx != null)
+                {
+                    errorMessage += $"\nInner exception: {innerEx.Message}";
+                    innerEx = innerEx.InnerException;
+                }
+                return Results.BadRequest(errorMessage);
+            }
+            return Results.Ok();
         }).Produces<ImageAnnotationDTO>().RequireAuthorization();
 
-        app.MapGet("/imageannotations/{id}", (Guid id, DataContext dataContext) =>
+        app.MapGet("/imageannotations/{id}", async (Guid id, DataContext dataContext) =>
         {
-            var imageAnnotationEntity = dataContext.ImageAnnotations.FirstOrDefault(x => x.ID == id);
+            var imageAnnotationEntity = await dataContext.ImageAnnotations.FirstOrDefaultAsync(x => x.ID == id);
             if (imageAnnotationEntity != null)
             {
                 var imageAnnotationDTO = new ImageAnnotationDTO

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Claims;
 using API.DTOs.Annotation;
 using API.Entities;
@@ -6,10 +7,14 @@ using Microsoft.EntityFrameworkCore;
 namespace API.Endpoints;
 public static class BackgroundclassifiCationEndpoints
 {
+    private static readonly SemaphoreSlim BackgroundClassificationLock = new SemaphoreSlim(1, 1);
     public static void MapBackgroundclassifiCationEndpoints(this WebApplication app)
     {
-        app.MapGet("/imageannotations/backgroundclassifications/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("/imageannotations/backgroundclassifications/next", async (DataContext dataContext, ClaimsPrincipal user) =>
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -20,7 +25,7 @@ public static class BackgroundclassifiCationEndpoints
 
             ImageAnnotationEntity? nextImageAnnotation = null;
 
-            foreach (var imageAnnotation in dataContext
+            var imageAnnotations = await dataContext
                 .ImageAnnotations
                 .Where(x => !x.BackgroundClassifications.Any(y => y.Users.Any(w => w.ID == userId)))
                 .Include(x => x.Image)
@@ -28,8 +33,9 @@ public static class BackgroundclassifiCationEndpoints
                 .ThenInclude(x => x.Users)
                 .Include(x => x.BackgroundClassifications)
                 .ThenInclude(x => x.Users)
-                .AsEnumerable()
-                .Where(x => !x.IsSkipped))
+                .ToListAsync();
+
+            foreach (var imageAnnotation in imageAnnotations.Where(x => !x.IsSkipped))
             {
                 if (imageAnnotation.IsInProgress)
                 {
@@ -64,12 +70,16 @@ public static class BackgroundclassifiCationEndpoints
                 IsComplete = nextImageAnnotation.IsComplete,
             };
 
+            stopwatch.Stop();
+            Console.WriteLine($"BGn: {stopwatch.Elapsed}");
             return Results.Ok(imageAnnotationDTO);
-
         }).Produces<ImageAnnotationDTO>();
 
         app.MapPost("imageannotations/{id}/backgroundclassifications", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, BackgroundClassificationDTO backgroundClassification) =>
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -78,11 +88,13 @@ public static class BackgroundclassifiCationEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
-            var user = dataContext.Users.SingleOrDefault(x => x.ID == userID);
-            if  (user == null)
+            var user = await dataContext.Users.SingleOrDefaultAsync(x => x.ID == userID);
+            if (user == null)
                 return Results.BadRequest("User not found");
 
-            var imageAnnotation = await dataContext
+            await using (await BackgroundClassificationLock.WaitAsyncDisposable())
+            {
+                var imageAnnotation = await dataContext
                 .ImageAnnotations
                 .Include(x => x.BackgroundClassifications)
                 .ThenInclude(x => x.Users)
@@ -90,56 +102,59 @@ public static class BackgroundclassifiCationEndpoints
                 .ThenInclude(x => x.BackgroundClassificationStrings)
                 .FirstOrDefaultAsync(x => x.ID == id);
 
-            if (imageAnnotation == null)
-                return Results.NotFound("ImageAnnotation not found");
+                if (imageAnnotation == null)
+                    return Results.NotFound("ImageAnnotation not found");
 
-            if (imageAnnotation.BackgroundClassifications.Any(x => x.Users.Any(z => z.ID == userID)))
-                return Results.BadRequest("User has already submitted a BackgroundClassification for this image");
+                if (imageAnnotation.BackgroundClassifications.Any(x => x.Users.Any(z => z.ID == user.ID)))
+                    return Results.BadRequest("User has already submitted a BackgroundClassification for this image");
 
-            var labels = backgroundClassification.BackgroundClassificationLabels.OrderBy(x => x).ToList();
+                var labels = backgroundClassification.BackgroundClassificationLabels.OrderBy(x => x).ToList();
 
-            var backgroundclassificationEntitiy = imageAnnotation
-                .BackgroundClassifications
-                .SingleOrDefault(x => x.BackgroundClassificationStrings.Select(x => x.value).SequenceEqual(labels));
+                var backgroundclassificationEntitiy = imageAnnotation
+                    .BackgroundClassifications
+                    .SingleOrDefault(x => x.BackgroundClassificationStrings.Select(x => x.value).SequenceEqual(labels));
 
-            if (backgroundclassificationEntitiy)
-            {
-                backgroundclassificationEntitiy.Users.Add(user);
-            }
-            else
-            {
-                backgroundclassificationEntitiy = new BackgroundClassificationEntity
+                if (backgroundclassificationEntitiy)
                 {
-                    BackgroundClassificationStrings = labels.ConvertAll(x => new BackgroundClassificationStringEntity { value = x }),
-                    Users = new List<UserEntity> { user }
-                };
-                imageAnnotation.BackgroundClassifications.Add(backgroundclassificationEntitiy);
-            }
-
-            try
-            {
-                await dataContext.SaveChangesAsync();
-            }
-            catch (DbUpdateException ex)
-            {
-                string errorMessage = $"Failed to save changes: {ex.Message}";
-                var innerEx = ex.InnerException;
-                while (innerEx != null)
-                {
-                    errorMessage += $"\nInner exception: {innerEx.Message}";
-                    innerEx = innerEx.InnerException;
+                    backgroundclassificationEntitiy.Users.Add(user);
                 }
-                return Results.BadRequest(errorMessage);
-            }
+                else
+                {
+                    backgroundclassificationEntitiy = new BackgroundClassificationEntity
+                    {
+                        BackgroundClassificationStrings = labels.ConvertAll(x => new BackgroundClassificationStringEntity { value = x }),
+                        Users = new List<UserEntity> { user }
+                    };
+                    imageAnnotation.BackgroundClassifications.Add(backgroundclassificationEntitiy);
+                }
 
-            return Results.Ok();
+                try
+                {
+                    await dataContext.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex)
+                {
+                    string errorMessage = $"Failed to save changes: {ex.Message}";
+                    var innerEx = ex.InnerException;
+                    while (innerEx != null)
+                    {
+                        errorMessage += $"\nInner exception: {innerEx.Message}";
+                        innerEx = innerEx.InnerException;
+                    }
+                    return Results.BadRequest(errorMessage);
+                }
+
+                stopwatch.Stop();
+                Console.WriteLine($"BGp: {stopwatch.Elapsed}");
+                return Results.Ok();
+            }
         });
 
-        app.MapGet("imageannotations/backgroundclassifications", (DataContext dataContext) =>
+        app.MapGet("imageannotations/backgroundclassifications", async (DataContext dataContext) =>
         {
             var imageAnnotation = dataContext.BackgroundClassifications;
 
-            var backgroundClassifications = imageAnnotation.Select(x => new BackgroundClassificationDTO
+            var backgroundClassifications = await imageAnnotation.Select(x => new BackgroundClassificationDTO
             {
                 ID = x.ID,
                 Created = x.Created,
@@ -147,9 +162,9 @@ public static class BackgroundclassifiCationEndpoints
                 BackgroundClassificationLabels = x.BackgroundClassificationStrings.Select(x => x.value).ToList(),
                 Users = x.Users.Select(x => x.ID).ToList(),
                 ImageAnnotation = x.ImageAnnotation.ID,
-            }).ToList();
+            }).ToListAsync();
 
-            return Results.Ok();
+            return Results.Ok(backgroundClassifications);
         });
     }
 }

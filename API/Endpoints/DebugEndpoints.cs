@@ -49,7 +49,8 @@ public static class DebugEndpoints
                 .Select(x => new UserDTO { Alias = x, Tag = "SampleData" })
                 .ToList();
 
-            var clients = new List<HttpClient>();
+            //var clients = new List<HttpClient>();
+            var clients = new Dictionary<HttpClient, Task<bool>>();
 
             foreach (var user in usersToSeed)
             {
@@ -57,7 +58,7 @@ public static class DebugEndpoints
                 var response = await client.PostAsJsonAsync("/users/admin", user);
                 var token = await response.Content.ReadFromJsonAsync<string>();
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                clients.Add(client);
+                clients.Add(client, Task.FromResult(true));
             }
 
             var imagesToSeed = new List<ImageDTO> {
@@ -116,40 +117,64 @@ public static class DebugEndpoints
                 (imagesToSeed[i], imagesToSeed[k]) = (imagesToSeed[k], imagesToSeed[i]);
             }
 
+            var imageTasks = new List<Task>();
             foreach (var image in imagesToSeed)
             {
-                var response = await clients[rng.Next(0, clients.Count)].PostAsJsonAsync("/images", new List<ImageDTO>() { image });
-                Console.WriteLine(response);
+                imageTasks.Add(clients.ElementAt(rng.Next(0, clients.Count)).Key.PostAsJsonAsync("/images", new List<ImageDTO>() { image }));
             }
+            Task.WaitAll(imageTasks.ToArray());
 
+
+            int sucesses = 0;
             for (int i = 0; i < 1000; i++)
             {
-                Console.WriteLine();
-                var client = clients[rng.Next(0, clients.Count)];
-                switch (rng.Next(0, 5))
+                var clientindex = Task.WaitAny(clients.Values.ToArray());
+                var client = clients.ElementAt(clientindex);
+                sucesses += client.Value.Result ? 1 : 0;
+                switch (rng.Next(0, 6))
                 {
                     case 0:
-                        Console.Write("BC " + await doBackgroundClassificationAsync(client, rng));
+                        //Console.Write("BC ");
+                        clients[client.Key] = doBackgroundClassificationAsync(client.Key, rng);
+                        //await doBackgroundClassificationAsync(client, rng);
                         break;
                     case 1:
-                        Console.Write("CC " + await doContextClassificationAsync(client, rng));
+                        //Console.Write("CC ");
+                        clients[client.Key] = doContextClassificationAsync(client.Key, rng);
+                        //await doContextClassificationAsync(client, rng);
                         break;
                     case 2:
-                        Console.Write("SI " + await doSubImageAsync(client, rng));
+                        //Console.Write("SI ");
+                        clients[client.Key] = doSubImageAsync(client.Key, rng);
+                        //await doSubImageAsync(client, rng);
                         break;
                     case 3:
-                        Console.Write("TC " + await doTrashSuperCategoryAsync(client, rng));
+                        //Console.Write("SP ");
+                        clients[client.Key] = doTrashSuperCategoryAsync(client.Key, rng);
+                        //await doTrashSuperCategoryAsync(client, rng);
                         break;
                     case 4:
-                        Console.Write("Se " + await doSegmentationAsync(client));
+                        //Console.Write("SB ");
+                        clients[client.Key] = doTrashSubCategoryAsync(client.Key, rng);
+                        //await doTrashSubCategoryAsync(client, rng);
+                        break;
+                    case 5:
+                        //Console.Write("Se ");
+                        clients[client.Key] = doSegmentationAsync(client.Key);
+                        //await doSegmentationAsync(client);
                         break;
                 }
-                Console.Write(" " + i);
+                //Console.Write(1+i);
+                //Console.WriteLine();
             }
+
+            Task.WaitAll(clients.Values.ToArray());
+
+            Console.WriteLine($"sucesses: {sucesses}");
 
             foreach (var client in clients)
             {
-                client.Dispose();
+                client.Key.Dispose();
             }
 
             return Results.Ok("Data seeded successfully.");
@@ -158,47 +183,47 @@ public static class DebugEndpoints
         static async Task<bool> doBackgroundClassificationAsync(HttpClient client, Random rng)
         {
             var response = await client.GetAsync("imageannotations/backgroundclassifications/next");
-            //Console.WriteLine(response);
+
             if (response.StatusCode != HttpStatusCode.OK) return false;
 
             var responseContent = await response.Content.ReadFromJsonAsync<ImageAnnotationDTO>();
-            //Console.WriteLine(responseContent == null ? "responseContent missing" : "responseContent found");
+
             if (responseContent == null) return false;
 
             response = await client.PostAsJsonAsync($"/imageannotations/{responseContent.ID}/backgroundclassifications", new BackgroundClassificationDTO
             {
                 BackgroundClassificationLabels = rng.Next(0, 5) >= 1 ? new string[] { "option 1" } : new string[] { "option 1", "option 2" }
             });
-            //Console.WriteLine(response);
-            return true;
+
+            return response.StatusCode == HttpStatusCode.OK;
         }
 
         static async Task<bool> doContextClassificationAsync(HttpClient client, Random rng)
         {
             var response = await client.GetAsync("imageannotations/contextclassifications/next");
-            //Console.WriteLine(response);
+
             if (response.StatusCode != HttpStatusCode.OK) return false;
 
             var responseContent = await response.Content.ReadFromJsonAsync<ImageAnnotationDTO>();
-            //Console.WriteLine(responseContent == null ? "responseContent missing" : "responseContent found");
+
             if (responseContent == null) return false;
 
             response = await client.PostAsJsonAsync($"/imageannotations/{responseContent.ID}/contextclassifications", new ContextClassificationDTO
             {
                 ContextClassificationLabel = rng.Next(0, 5) >= 1 ? "Option 1" : "Option 2"
             });
-            //Console.WriteLine(response);
-            return true;
+
+            return response.StatusCode == HttpStatusCode.OK;
         }
 
         static async Task<bool> doSubImageAsync(HttpClient client, Random rng)
         {
             var response = await client.GetAsync("imageannotations/subimages/next");
-            //Console.WriteLine(response);
+
             if (response.StatusCode != HttpStatusCode.OK) return false;
 
             var responseContent = await response.Content.ReadFromJsonAsync<ImageAnnotationDTO>();
-            //Console.WriteLine(responseContent == null ? "responseContent missing" : "responseContent found");
+
             if (responseContent == null) return false;
 
             response = await client.PostAsJsonAsync($"/imageannotations/{responseContent.ID}/subimages", new SubImageAnnotationGroupDTO
@@ -225,46 +250,53 @@ public static class DebugEndpoints
                     }
                 }
             });
-            //Console.WriteLine(response);
-            return true;
+
+            return response.StatusCode == HttpStatusCode.OK;
+        }
+
+        static async Task<bool> doTrashSubCategoryAsync(HttpClient client, Random rng)
+        {
+            var response = await client.GetAsync("/imageannotations/subimageannotations/trashsubcategories/next");
+
+            if (response.StatusCode != HttpStatusCode.OK) return false;
+
+            var responseContent = await response.Content.ReadFromJsonAsync<SubImageAnnotationDTO>();
+
+            if (responseContent == null) return false;
+
+            response = await client.PostAsJsonAsync($"imageannotations/subimageannotations/{responseContent.ID}/trashsubcategories", new TrashSubCategoryDTO
+            {
+                TrashSubCategoryLabel = rng.Next(0, 5) >= 1 ? "Option 1" : "Option 2"
+            });
+
+            return response.StatusCode == HttpStatusCode.OK;
         }
 
         static async Task<bool> doTrashSuperCategoryAsync(HttpClient client, Random rng)
         {
             var response = await client.GetAsync("/imageannotations/subimageannotations/trashsupercategories/next");
-            //Console.WriteLine(response);
+
             if (response.StatusCode != HttpStatusCode.OK) return false;
 
             var responseContent = await response.Content.ReadFromJsonAsync<SubImageAnnotationDTO>();
-            //Console.WriteLine(responseContent == null ? "responseContent missing" : "responseContent found");
+
             if (responseContent == null) return false;
-
-
-            var Super = rng.Next(0, 5) >= 1 ? "Option 1" : "Option 2";
-            var Sub = rng.Next(0, 5) >= 1 ? "Option 1" : "Option 2";
 
             response = await client.PostAsJsonAsync($"imageannotations/subimageannotations/{responseContent.ID}/trashsupercategories", new TrashSuperCategoryDTO
             {
-                TrashSuperCategoryLabel = Super
+                TrashSuperCategoryLabel = rng.Next(0, 5) >= 1 ? "Option 1" : "Option 2"
             });
-            //Console.WriteLine(response);
 
-            response = await client.PostAsJsonAsync($"imageannotations/subimageannotations/{responseContent.ID}/trashsubcategories", new TrashSuperCategoryDTO
-            {
-                TrashSuperCategoryLabel = Sub
-            });
-            //Console.WriteLine(response);
-            return true;
+            return response.StatusCode == HttpStatusCode.OK;
         }
 
         static async Task<bool> doSegmentationAsync(HttpClient client)
         {
             var response = await client.GetAsync("/imageannotations/subimageannotations/segmentations/next");
-            //Console.WriteLine(response);
+
             if (response.StatusCode != HttpStatusCode.OK) return false;
 
             var responseContent = await response.Content.ReadFromJsonAsync<SubImageAnnotationDTO>();
-            //Console.WriteLine(responseContent == null ? "responseContent missing" : "responseContent found");
             if (responseContent == null) return false;
 
             response = await client.PostAsJsonAsync($"imageannotations/subimageannotations/{responseContent.ID}/segmentations", new SegmentationDTO
@@ -295,8 +327,8 @@ public static class DebugEndpoints
                     }
                 }
             });
-            //Console.WriteLine(response);
-            return true;
+
+            return response.StatusCode == HttpStatusCode.OK;
         }
     }
 }

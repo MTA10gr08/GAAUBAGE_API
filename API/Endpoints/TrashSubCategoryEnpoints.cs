@@ -4,14 +4,19 @@ using System.Security.Claims;
 using API.DTOs.Annotation;
 using API.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 namespace API.Endpoints;
 public static class TrashSubCategoryEndpoints
 {
-    public static void MapTrashSubCatagoryEndpoints(this WebApplication app)
+    private static readonly SemaphoreSlim trashSubCategoryLock = new SemaphoreSlim(1, 1);
+    public static async void MapTrashSubCatagoryEndpoints(this WebApplication app)
     {
-        app.MapGet("/imageannotations/subimageannotations/trashsubcategories/next", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("/imageannotations/subimageannotations/trashsubcategories/next", async (DataContext dataContext, ClaimsPrincipal user) =>
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -22,8 +27,7 @@ public static class TrashSubCategoryEndpoints
 
             SubImageAnnotationEntity? nextSubImageAnnotation = null;
 
-            int priority = 0;
-            foreach (var subImageAnnotation in dataContext
+            var subimageannotations = await dataContext
                 .SubImageAnnotations
                 .Include(x => x.SubImageAnnotationGroup)
                 .ThenInclude(x => x.ImageAnnotation)
@@ -31,7 +35,10 @@ public static class TrashSubCategoryEndpoints
                 .ThenInclude(x => x.Users)
                 .Include(x => x.TrashSubCategories)
                 .ThenInclude(x => x.Users)
-                .AsEnumerable()
+                .ToListAsync();
+
+            int priority = 0;
+            foreach (var subImageAnnotation in subimageannotations
                 .Where(x => (x.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == x.SubImageAnnotationGroup
                             || x.SubImageAnnotationGroup.Users.Any(y => y.ID == userID))
                             && !x.TrashSubCategories.Any(y => y.Users.Any(z => z.ID == userID))))
@@ -64,7 +71,8 @@ public static class TrashSubCategoryEndpoints
                 {
                     priority = 2;
                     nextSubImageAnnotation = subImageAnnotation;
-                }else if (!nextSubImageAnnotation && priority < 1)
+                }
+                else if (!nextSubImageAnnotation && priority < 1)
                 {
                     priority = 1;
                     nextSubImageAnnotation = subImageAnnotation;
@@ -93,11 +101,16 @@ public static class TrashSubCategoryEndpoints
                 IsInProgress = nextSubImageAnnotation.IsInProgress,
             };
 
+            stopwatch.Stop();
+            Console.WriteLine($"SBn: {stopwatch.Elapsed}");
             return Results.Ok(subImageAnnotationDTO);
         }).Produces<SubImageAnnotationDTO>();
 
         app.MapPost("imageannotations/subimageannotations/{id}/trashsubcategories", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, TrashSubCategoryDTO trashSubCategory) =>
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -106,59 +119,65 @@ public static class TrashSubCategoryEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
-            var user = dataContext.Users.SingleOrDefault(x => x.ID == userID);
+            var user = await dataContext.Users.SingleOrDefaultAsync(x => x.ID == userID);
             if (user == null)
                 return Results.BadRequest("User not found");
 
-            var subImageAnnotation = dataContext
-                .SubImageAnnotations
-                .Include(x => x.TrashSubCategories)
-                .ThenInclude(x => x.Users)
-                .FirstOrDefault(x => x.ID == id);
-
-            if (subImageAnnotation == null)
-                return Results.NotFound("SubImageAnnotation not found");
-
-            if (subImageAnnotation.TrashSubCategories.Any(x => x.Users.Any(z => z.ID == userID)))
-                return Results.BadRequest("User has already submitted a BackgroundClassification for this image");
-
-            var label = trashSubCategory.TrashSubCategoryLabel;
-
-            var trashSubCategoryEntity = subImageAnnotation
-                .TrashSubCategories
-                .SingleOrDefault(x => x.TrashSubCategory == label);
-
-            if (trashSubCategoryEntity)
+            await using (await trashSubCategoryLock.WaitAsyncDisposable())
             {
-                trashSubCategoryEntity.Users.Add(user);
-            }
-            else
-            {
-                trashSubCategoryEntity = new TrashSubCategoryEntity
+
+                var subImageAnnotation = await dataContext
+                    .SubImageAnnotations
+                    .Include(x => x.TrashSubCategories)
+                    .ThenInclude(x => x.Users)
+                    .FirstOrDefaultAsync(x => x.ID == id);
+
+                if (subImageAnnotation == null)
+                    return Results.NotFound("SubImageAnnotation not found");
+
+                if (subImageAnnotation.TrashSubCategories.Any(x => x.Users.Any(z => z.ID == user.ID)))
+                    return Results.BadRequest("User has already submitted a BackgroundClassification for this image");
+
+                var label = trashSubCategory.TrashSubCategoryLabel;
+
+                var trashSubCategoryEntity = subImageAnnotation
+                    .TrashSubCategories
+                    .SingleOrDefault(x => x.TrashSubCategory == label);
+
+                if (trashSubCategoryEntity)
                 {
-                    TrashSubCategory = label,
-                    Users = new List<UserEntity> { user }
-                };
-                subImageAnnotation.TrashSubCategories.Add(trashSubCategoryEntity);
-            }
-
-            try
-            {
-                await dataContext.SaveChangesAsync();
-            }
-            catch (DbUpdateException ex)
-            {
-                string errorMessage = $"Failed to save changes: {ex.Message}";
-                var innerEx = ex.InnerException;
-                while (innerEx != null)
-                {
-                    errorMessage += $"\nInner exception: {innerEx.Message}";
-                    innerEx = innerEx.InnerException;
+                    trashSubCategoryEntity.Users.Add(user);
                 }
-                return Results.BadRequest(errorMessage);
-            }
+                else
+                {
+                    trashSubCategoryEntity = new TrashSubCategoryEntity
+                    {
+                        TrashSubCategory = label,
+                        Users = new List<UserEntity> { user }
+                    };
+                    subImageAnnotation.TrashSubCategories.Add(trashSubCategoryEntity);
+                }
 
-            return Results.Ok();
+                try
+                {
+                    await dataContext.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex)
+                {
+                    string errorMessage = $"Failed to save changes: {ex.Message}";
+                    var innerEx = ex.InnerException;
+                    while (innerEx != null)
+                    {
+                        errorMessage += $"\nInner exception: {innerEx.Message}";
+                        innerEx = innerEx.InnerException;
+                    }
+                    return Results.BadRequest(errorMessage);
+                }
+
+                stopwatch.Stop();
+                Console.WriteLine($"SBp: {stopwatch.Elapsed}");
+                return Results.Ok();
+            }
         });
 
         app.MapGet("imageannotations/subimageannotations/trashsubcategories/{id}", async (Guid id, DataContext dataContext, ClaimsPrincipal claims) =>
@@ -171,7 +190,7 @@ public static class TrashSubCategoryEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
-            var user = dataContext.Users.SingleOrDefault(x => x.ID == userID);
+            var user = await dataContext.Users.SingleOrDefaultAsync(x => x.ID == userID);
             if (user == null)
                 return Results.BadRequest("User not found");
 

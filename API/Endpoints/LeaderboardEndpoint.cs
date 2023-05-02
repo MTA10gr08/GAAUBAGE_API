@@ -8,7 +8,7 @@ public static class LeaderboardEndpoints
 {
     public static void MapLeaderboardEndpoints(this WebApplication app)
     {
-        app.MapGet("/leaderboard", (DataContext dataContext, ClaimsPrincipal user) =>
+        app.MapGet("/leaderboard", async (DataContext dataContext, ClaimsPrincipal user) =>
         {
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -19,14 +19,14 @@ public static class LeaderboardEndpoints
                 return Results.BadRequest("Invalid user ID format");
 
             // Sort the users by their scores in descending order
-            var sortedUsers = dataContext.Users
+            var sortedUsers = (await dataContext.Users
                 .Include(x => x.BackgroundClassifications)
                 .Include(x => x.ContextClassifications)
                 .Include(x => x.SubImageAnnotationGroups)
                 .Include(x => x.TrashSubCategories)
                 .Include(x => x.TrashSuperCategories)
                 .Include(x => x.Segmentations)
-                .AsEnumerable()
+                .ToListAsync())
                 .Select(x => new
                 {
                     x.ID,

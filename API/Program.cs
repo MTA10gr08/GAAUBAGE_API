@@ -3,13 +3,13 @@ using API.Entities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MySqlConnector;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
 
 builder.Services.Configure<AppSettings>(builder.Configuration);
 
@@ -20,7 +20,11 @@ if (appSettings == null) throw new Exception("Missing configuration value: AppSe
 
 if (appSettings.DB == null)
 {
-    builder.Services.AddDbContext<DataContext>(options => options.UseSqlite("Data Source=file::memory:?cache=shared", x => x.UseNetTopologySuite()));
+    builder.Services.AddDbContext<DataContext>(options =>
+    {
+        options.UseSqlite("Data Source=file::memory:?cache=shared", x => x.UseNetTopologySuite());
+        options.ConfigureWarnings(w => w.Ignore(RelationalEventId.MultipleCollectionIncludeWarning));
+    });
 }
 else
 {
@@ -33,7 +37,11 @@ else
         Password = appSettings.DB.Password
     };
     var serverVersion = ServerVersion.AutoDetect(connectionStringBuilder.ConnectionString);
-    builder.Services.AddDbContext<DataContext>(options => options.UseMySql(connectionStringBuilder.ConnectionString, serverVersion, x => x.UseNetTopologySuite()));
+    builder.Services.AddDbContext<DataContext>(options =>
+    {
+        options.UseMySql(connectionStringBuilder.ConnectionString, serverVersion, x => x.UseNetTopologySuite());
+        options.ConfigureWarnings(w => w.Ignore(RelationalEventId.MultipleCollectionIncludeWarning));
+    });
 }
 
 //Set up Authentication and Authorization
