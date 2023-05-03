@@ -50,7 +50,7 @@ public static class ImageEndpoints
 
                     if (response.IsSuccessStatusCode)
                     {
-                        string contentType = response.Content.Headers.ContentType.MediaType;
+                        string contentType = response.Content.Headers.ContentType?.MediaType ?? string.Empty;
 
                         if (contentType.StartsWith("image/"))
                         {
@@ -70,7 +70,7 @@ public static class ImageEndpoints
                         failedURLs.Add(image.URI);
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     failedURLs.Add(image.URI);
                 }

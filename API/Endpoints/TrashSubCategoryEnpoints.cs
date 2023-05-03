@@ -10,7 +10,7 @@ namespace API.Endpoints;
 public static class TrashSubCategoryEndpoints
 {
     private static readonly SemaphoreSlim trashSubCategoryLock = new SemaphoreSlim(1, 1);
-    public static async void MapTrashSubCatagoryEndpoints(this WebApplication app)
+    public static void MapTrashSubCatagoryEndpoints(this WebApplication app)
     {
         app.MapGet("/imageannotations/subimageannotations/trashsubcategories/next", async (DataContext dataContext, ClaimsPrincipal user) =>
         {
@@ -146,7 +146,7 @@ public static class TrashSubCategoryEndpoints
 
                 if (trashSubCategoryEntity)
                 {
-                    trashSubCategoryEntity.Users.Add(user);
+                    trashSubCategoryEntity?.Users.Add(user);
                 }
                 else
                 {

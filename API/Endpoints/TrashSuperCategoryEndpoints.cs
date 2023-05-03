@@ -145,7 +145,7 @@ public static class TrashSuperCategoryEndpoints
 
                 if (trashSupercategoryEntity)
                 {
-                    trashSupercategoryEntity.Users.Add(user);
+                    trashSupercategoryEntity?.Users.Add(user);
                 }
                 else
                 {

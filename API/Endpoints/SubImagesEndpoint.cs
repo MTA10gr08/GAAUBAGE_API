@@ -10,7 +10,7 @@ namespace API.Endpoints;
 public static class SubImageEndpoints
 {
     private static readonly SemaphoreSlim SubImagesLock = new SemaphoreSlim(1, 1);
-    public static async void MapSubImageEndpoints(this WebApplication app)
+    public static void MapSubImageEndpoints(this WebApplication app)
     {
         app.MapGet("/imageannotations/subimages/next", async (DataContext dataContext, ClaimsPrincipal user) =>
         {
@@ -217,9 +217,9 @@ public static class SubImageEndpoints
                 .SubImageAnnotationGroups
                 .Where(x => x.SubImageAnnotations.Count == count).ToList();
 
-        SubImageAnnotationGroupEntity bestFitGroup = null;
+        SubImageAnnotationGroupEntity? bestFitGroup = null;
         double maxMinIoU = -1;
-        int[] bestAssignment = null;
+        int[]? bestAssignment = null;
 
         foreach (var group in subImageAnnotationGroups)
         {
@@ -274,7 +274,7 @@ public static class SubImageEndpoints
             }
         }
 
-        if (bestFitGroup != null)
+        if (bestFitGroup != null && bestAssignment != null)
         {
             // Update the average bounding boxes for the best fit group
             int newUserCount = bestFitGroup.Users.Count + 1;

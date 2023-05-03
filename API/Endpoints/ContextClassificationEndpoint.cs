@@ -114,7 +114,7 @@ public static class ContextClassificationEndpoints
 
                 if (contextClassificationEntity)
                 {
-                    contextClassificationEntity.Users.Add(user);
+                    contextClassificationEntity?.Users.Add(user);
                 }
                 else
                 {

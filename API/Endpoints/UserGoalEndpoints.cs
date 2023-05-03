@@ -20,12 +20,12 @@ public static class UserGoalEndpoints
             if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
                 return Results.BadRequest("Invalid user ID format");
 
-            var user = dataContext.Users
+            var user = await dataContext.Users
             .Include(x => x.BackgroundClassifications)
             .Include(x => x.SubImageAnnotationGroups)
             .Include(x => x.TrashSubCategories)
             .Include(x => x.Segmentations)
-            .FirstOrDefault(x => x.ID == userID);
+            .FirstOrDefaultAsync(x => x.ID == userID);
             if (user == null)
                 return Results.BadRequest("User not found");
 

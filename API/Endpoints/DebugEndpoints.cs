@@ -160,7 +160,7 @@ public static class DebugEndpoints
                         break;
                     case 5:
                         //Console.Write("Se ");
-                        clients[client.Key] = doSegmentationAsync(client.Key);
+                        clients[client.Key] = doSegmentationAsync(client.Key, rng);
                         //await doSegmentationAsync(client);
                         break;
                 }
@@ -202,7 +202,7 @@ public static class DebugEndpoints
         {
             var response = await client.GetAsync("imageannotations/contextclassifications/next");
 
-            if (response.StatusCode != HttpStatusCode.OK) return false;
+            if (response.StatusCode != HttpStatusCode.OK) return await doBackgroundClassificationAsync(client, rng);
 
             var responseContent = await response.Content.ReadFromJsonAsync<ImageAnnotationDTO>();
 
@@ -220,7 +220,7 @@ public static class DebugEndpoints
         {
             var response = await client.GetAsync("imageannotations/subimages/next");
 
-            if (response.StatusCode != HttpStatusCode.OK) return false;
+            if (response.StatusCode != HttpStatusCode.OK) return await doContextClassificationAsync(client, rng);
 
             var responseContent = await response.Content.ReadFromJsonAsync<ImageAnnotationDTO>();
 
@@ -258,7 +258,7 @@ public static class DebugEndpoints
         {
             var response = await client.GetAsync("/imageannotations/subimageannotations/trashsubcategories/next");
 
-            if (response.StatusCode != HttpStatusCode.OK) return false;
+            if (response.StatusCode != HttpStatusCode.OK) return await doSubImageAsync(client, rng);
 
             var responseContent = await response.Content.ReadFromJsonAsync<SubImageAnnotationDTO>();
 
@@ -276,7 +276,7 @@ public static class DebugEndpoints
         {
             var response = await client.GetAsync("/imageannotations/subimageannotations/trashsupercategories/next");
 
-            if (response.StatusCode != HttpStatusCode.OK) return false;
+            if (response.StatusCode != HttpStatusCode.OK) return await doTrashSubCategoryAsync(client, rng);
 
             var responseContent = await response.Content.ReadFromJsonAsync<SubImageAnnotationDTO>();
 
@@ -290,11 +290,11 @@ public static class DebugEndpoints
             return response.StatusCode == HttpStatusCode.OK;
         }
 
-        static async Task<bool> doSegmentationAsync(HttpClient client)
+        static async Task<bool> doSegmentationAsync(HttpClient client, Random rng)
         {
             var response = await client.GetAsync("/imageannotations/subimageannotations/segmentations/next");
 
-            if (response.StatusCode != HttpStatusCode.OK) return false;
+            if (response.StatusCode != HttpStatusCode.OK) return await doTrashSuperCategoryAsync(client, rng);
 
             var responseContent = await response.Content.ReadFromJsonAsync<SubImageAnnotationDTO>();
             if (responseContent == null) return false;

@@ -116,7 +116,7 @@ public static class BackgroundclassifiCationEndpoints
 
                 if (backgroundclassificationEntitiy)
                 {
-                    backgroundclassificationEntitiy.Users.Add(user);
+                    backgroundclassificationEntitiy?.Users.Add(user);
                 }
                 else
                 {

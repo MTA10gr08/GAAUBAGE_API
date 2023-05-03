@@ -14,8 +14,8 @@ public abstract class BaseEntity
 
 public class UserEntity : BaseEntity
 {
-    public string Alias { get; set; }
-    public string Tag { get; set; }
+    public string Alias { get; set; } = string.Empty;
+    public string Tag { get; set; } = string.Empty;
     public ICollection<ImageEntity> Images { get; set; } = new HashSet<ImageEntity>();
     public ICollection<ImageAnnotationEntity> VoteSkipped { get; set; } = new HashSet<ImageAnnotationEntity>();
     public ICollection<BackgroundClassificationEntity> BackgroundClassifications { get; set; } = new HashSet<BackgroundClassificationEntity>();
@@ -43,20 +43,20 @@ public class UserEntity : BaseEntity
 public class ImageEntity : BaseEntity
 {
     public Guid UserID { get; set; }
-    public UserEntity User { get; set; }
+    public UserEntity User { get; set; } = null!;
 
     public Guid ImageAnnotationID { get; set; }
-    public ImageAnnotationEntity ImageAnnotation { get; set; }
+    public ImageAnnotationEntity ImageAnnotation { get; set; } = null!;
 
     public ICollection<SubImageAnnotationEntity> SubImageAnnotations { get; set; } = new HashSet<SubImageAnnotationEntity>();
 
-    public string URI { get; set; }
+    public string URI { get; set; } = string.Empty;
 }
 
 public class ImageAnnotationEntity : BaseEntity
 {
     public Guid ImageID { get; set; }
-    public ImageEntity Image { get; set; }
+    public ImageEntity Image { get; set; } = null!;
 
     public ICollection<UserEntity> VoteSkipped { get; set; } = new HashSet<UserEntity>();
 
@@ -116,31 +116,31 @@ public class ImageAnnotationEntity : BaseEntity
 public class BackgroundClassificationEntity : BaseEntity
 {
     public Guid ImageAnnotationID { get; set; }
-    public ImageAnnotationEntity ImageAnnotation { get; set; }
+    public ImageAnnotationEntity ImageAnnotation { get; set; } = null!;
     public ICollection<BackgroundClassificationStringEntity> BackgroundClassificationStrings { get; set; } = new HashSet<BackgroundClassificationStringEntity>();
     public ICollection<UserEntity> Users { get; set; } = new HashSet<UserEntity>();
 }
 
 public class BackgroundClassificationStringEntity : BaseEntity
 {
-    public string value { get; set; }
+    public string value { get; set; } = null!;
     public Guid BackgroundClassificationID { get; set; }
-    public BackgroundClassificationEntity BackgroundClassification { get; set; }
+    public BackgroundClassificationEntity BackgroundClassification { get; set; } = null!;
     public static implicit operator string(BackgroundClassificationStringEntity r) => r.value;
 }
 
 public class ContextClassificationEntity : BaseEntity
 {
     public Guid ImageAnnotationID { get; set; }
-    public ImageAnnotationEntity ImageAnnotation { get; set; }
-    public string ContextClassification { get; set; }
+    public ImageAnnotationEntity ImageAnnotation { get; set; } = null!;
+    public string ContextClassification { get; set; } = null!;
     public ICollection<UserEntity> Users { get; set; } = new HashSet<UserEntity>();
 }
 
 public class SubImageAnnotationGroupEntity : BaseEntity
 {
     public Guid ImageAnnotationID { get; set; }
-    public ImageAnnotationEntity ImageAnnotation { get; set; }
+    public ImageAnnotationEntity ImageAnnotation { get; set; } = null!;
     public ICollection<UserEntity> Users { get; set; } = new HashSet<UserEntity>();
     public ICollection<SubImageAnnotationEntity> SubImageAnnotations { get; set; } = new HashSet<SubImageAnnotationEntity>();
 }
@@ -189,25 +189,25 @@ public class SubImageAnnotationEntity : BaseEntity
 public class TrashSuperCategoryEntity : BaseEntity
 {
     public Guid SubImageAnnotationID { get; set; }
-    public SubImageAnnotationEntity SubImageAnnotation { get; set; }
+    public SubImageAnnotationEntity SubImageAnnotation { get; set; } = null!;
     public ICollection<UserEntity> Users { get; set; } = new HashSet<UserEntity>();
-    public string TrashSuperCategory { get; set; }
+    public string TrashSuperCategory { get; set; } = null!;
 }
 
 public class TrashSubCategoryEntity : BaseEntity
 {
     public Guid SubImageAnnotationID { get; set; }
-    public SubImageAnnotationEntity SubImageAnnotation { get; set; }
+    public SubImageAnnotationEntity SubImageAnnotation { get; set; } = null!;
     public ICollection<UserEntity> Users { get; set; } = new HashSet<UserEntity>();
-    public string TrashSubCategory { get; set; }
+    public string TrashSubCategory { get; set; } = null!;
 
 }
 
 public class SegmentationEntity : BaseEntity
 {
     public Guid SubImageAnnotationID { get; set; }
-    public SubImageAnnotationEntity SubImageAnnotation { get; set; }
+    public SubImageAnnotationEntity SubImageAnnotation { get; set; } = null!;
     public Guid UserID { get; set; }
-    public UserEntity User { get; set; }
-    public MultiPolygon Segmentation { get; set; } // MultiPolygon from NetTopologySuite.Geometries;
+    public UserEntity User { get; set; } = null!;
+    public MultiPolygon Segmentation { get; set; } = null!;
 }
