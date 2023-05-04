@@ -11,7 +11,7 @@ public class UserDTO : BaseDTO
     [SwaggerSchema(ReadOnly = true)] public uint Level { get; set; }
     [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> Images { get; set; } = new List<Guid>();
     [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> Skipped { get; set; } = new List<Guid>();
-    [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> BackgroundClassificationLabels { get; set; } = new List<Guid>();
+    [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> BackgroundClassifications { get; set; } = new List<Guid>();
     [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> ContextClassifications { get; set; } = new List<Guid>();
     [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> SubImageGroups { get; set; } = new List<Guid>();
     [SwaggerSchema(ReadOnly = true)] public ICollection<Guid> TrashSuperCategories { get; set; } = new List<Guid>();
