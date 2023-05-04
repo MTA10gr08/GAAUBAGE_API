@@ -14,9 +14,6 @@ public static class TrashSubCategoryEndpoints
     {
         app.MapGet("/imageannotations/subimageannotations/trashsubcategories/next", async (DataContext dataContext, ClaimsPrincipal user) =>
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -101,16 +98,11 @@ public static class TrashSubCategoryEndpoints
                 IsInProgress = nextSubImageAnnotation.IsInProgress,
             };
 
-            stopwatch.Stop();
-            Console.WriteLine($"SBn: {stopwatch.Elapsed}");
             return Results.Ok(subImageAnnotationDTO);
         }).Produces<SubImageAnnotationDTO>();
 
-        app.MapPost("imageannotations/subimageannotations/{id}/trashsubcategories", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, TrashSubCategoryDTO trashSubCategory) =>
+        app.MapPost("imageannotations/subimageannotations/{id}/trashsubcategories/me", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, TrashSubCategoryDTO trashSubCategory) =>
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -125,7 +117,6 @@ public static class TrashSubCategoryEndpoints
 
             await using (await trashSubCategoryLock.WaitAsyncDisposable())
             {
-
                 var subImageAnnotation = await dataContext
                     .SubImageAnnotations
                     .Include(x => x.TrashSubCategories)
@@ -174,8 +165,6 @@ public static class TrashSubCategoryEndpoints
                     return Results.BadRequest(errorMessage);
                 }
 
-                stopwatch.Stop();
-                Console.WriteLine($"SBp: {stopwatch.Elapsed}");
                 return Results.Ok();
             }
         });
@@ -197,7 +186,44 @@ public static class TrashSubCategoryEndpoints
             var TrashSubCategoryEntity = await dataContext
                 .TrashSubCategories
                 .Include(x => x.Users)
-                .FirstOrDefaultAsync(x => x.ID == id);
+                .SingleOrDefaultAsync(x => x.ID == id);
+
+            if (TrashSubCategoryEntity == null)
+                return Results.NotFound("TrashSubCategory not found");
+
+            var trashSubCategory = new TrashSubCategoryDTO()
+            {
+                ID = TrashSubCategoryEntity.ID,
+                Created = TrashSubCategoryEntity.Created,
+                Updated = TrashSubCategoryEntity.Updated,
+                Users = TrashSubCategoryEntity.Users.Select(x => x.ID).ToList(),
+                SubImageAnnotation = TrashSubCategoryEntity.SubImageAnnotationID,
+                TrashSubCategoryLabel = TrashSubCategoryEntity.TrashSubCategory
+            };
+
+            return Results.Ok(trashSubCategory);
+        }).Produces<TrashSubCategoryDTO>();
+
+        app.MapGet("imageannotations/subimageannotations/{id}/trashsubcategories/me", async (Guid id, DataContext dataContext, ClaimsPrincipal claims) =>
+        {
+            var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+                return Results.Unauthorized();
+
+            if (!Guid.TryParse(userIdClaim.Value, out Guid userID))
+                return Results.BadRequest("Invalid user ID format");
+
+            var user = await dataContext.Users.SingleOrDefaultAsync(x => x.ID == userID);
+            if (user == null)
+                return Results.BadRequest("User not found");
+
+            var TrashSubCategoryEntity = (await dataContext
+                .SubImageAnnotations
+                .Include(x => x.TrashSubCategories)
+                .ThenInclude(x => x.Users)
+                .SingleOrDefaultAsync(x => x.ID == id))?
+                .TrashSubCategories.SingleOrDefault(x => x.Users.SingleOrDefault(z => z.ID == user.ID));
 
             if (TrashSubCategoryEntity == null)
                 return Results.NotFound("TrashSubCategory not found");

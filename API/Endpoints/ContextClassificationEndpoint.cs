@@ -12,9 +12,6 @@ public static class ContextClassificationEndpoints
     {
         app.MapGet("/imageannotations/contextclassifications/next", async (DataContext dataContext, ClaimsPrincipal user) =>
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -70,8 +67,6 @@ public static class ContextClassificationEndpoints
                 IsComplete = nextImageAnnotation.IsComplete,
             };
 
-            stopwatch.Stop();
-            Console.WriteLine($"CCn: {stopwatch.Elapsed}");
             return Results.Ok(imageAnnotationDTO);
         }).Produces<ImageAnnotationDTO>();
 
@@ -142,8 +137,6 @@ public static class ContextClassificationEndpoints
                     return Results.BadRequest(errorMessage);
                 }
 
-                stopwatch.Stop();
-                Console.WriteLine($"CCp: {stopwatch.Elapsed}");
                 return Results.Ok();
             }
         });

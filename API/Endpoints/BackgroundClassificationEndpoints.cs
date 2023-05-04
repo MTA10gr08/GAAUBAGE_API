@@ -12,9 +12,6 @@ public static class BackgroundclassifiCationEndpoints
     {
         app.MapGet("/imageannotations/backgroundclassifications/next", async (DataContext dataContext, ClaimsPrincipal user) =>
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -70,16 +67,11 @@ public static class BackgroundclassifiCationEndpoints
                 IsComplete = nextImageAnnotation.IsComplete,
             };
 
-            stopwatch.Stop();
-            Console.WriteLine($"BGn: {stopwatch.Elapsed}");
             return Results.Ok(imageAnnotationDTO);
         }).Produces<ImageAnnotationDTO>();
 
         app.MapPost("imageannotations/{id}/backgroundclassifications", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, BackgroundClassificationDTO backgroundClassification) =>
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -144,8 +136,6 @@ public static class BackgroundclassifiCationEndpoints
                     return Results.BadRequest(errorMessage);
                 }
 
-                stopwatch.Stop();
-                Console.WriteLine($"BGp: {stopwatch.Elapsed}");
                 return Results.Ok();
             }
         });

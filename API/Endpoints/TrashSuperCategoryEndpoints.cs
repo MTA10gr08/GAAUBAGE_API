@@ -13,9 +13,6 @@ public static class TrashSuperCategoryEndpoints
     {
         app.MapGet("/imageannotations/subimageannotations/trashsupercategories/next", async (DataContext dataContext, ClaimsPrincipal user) =>
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -100,16 +97,11 @@ public static class TrashSuperCategoryEndpoints
                 IsInProgress = nextSubImageAnnotation.IsInProgress,
             };
 
-            stopwatch.Stop();
-            Console.WriteLine($"SPn: {stopwatch.Elapsed}");
             return Results.Ok(subImageAnnotationDTO);
         }).Produces<SubImageAnnotationDTO>();
 
         app.MapPost("imageannotations/subimageannotations/{id}/trashsupercategories", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, TrashSuperCategoryDTO trashSuperCategory) =>
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -173,8 +165,6 @@ public static class TrashSuperCategoryEndpoints
                     return Results.BadRequest(errorMessage);
                 }
 
-                stopwatch.Stop();
-                Console.WriteLine($"SPp: {stopwatch.Elapsed}");
                 return Results.Ok();
             }
         });

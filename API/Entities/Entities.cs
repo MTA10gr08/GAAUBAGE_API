@@ -58,7 +58,7 @@ public class UserEntity : BaseEntity
     {
         get
         {
-            return (uint)(Score > 10 ? 1 : Score > 30 ? 2 : Score > 60 ? 3 : 0);
+            return (uint)(Score > 10 ? 1 : Score > 40 ? 2 : Score > 100 ? 3 : Score > 200 ? 4 : 0);
         }
     }
 }

@@ -14,9 +14,6 @@ public static class SubImageEndpoints
     {
         app.MapGet("/imageannotations/subimages/next", async (DataContext dataContext, ClaimsPrincipal user) =>
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -72,70 +69,11 @@ public static class SubImageEndpoints
                 IsComplete = nextImageAnnotation.IsComplete,
             };
 
-            stopwatch.Stop();
-            Console.WriteLine($"SIn: {stopwatch.Elapsed}");
             return Results.Ok(imageAnnotationDTO);
         }).Produces<ImageAnnotationDTO>();
 
-
-        /*app.MapGet("imageannotations/subimages", async (DataContext dataContext) =>
-        {
-            var subImageAnnotations = await dataContext.SubImageAnnotations.Select(x => new SubImageAnnotationDTO
-            {
-                ID = x.ID,
-                Created = x.Created,
-                Updated = x.Updated,
-                X = x.X,
-                Y = x.Y,
-                Width = x.Width,
-                Height = x.Height,
-                SubImageAnnotationGroup = x.SubImageAnnotationGroupID,
-                TrashSuperCategories = x.TrashSuperCategories.Select(y => y.ID).ToList(),
-                TrashSuperCategoriesConsensus = x.TrashSuperCategoriesConsensus.ID,
-                TrashSubCategories = x.TrashSubCategories.Select(y => y.ID).ToList(),
-                TrashSubCategoriesConsensus = x.TrashSubCategoriesConsensus.ID,
-                Segmentations = x.Segmentations.Select(y => y.ID).ToList(),
-                IsComplete = x.IsComplete,
-                IsInProgress = x.IsInProgress,
-            }).ToListAsync();
-            return Results.Ok(subImageAnnotations);
-        }).Produces<List<SubImageAnnotationDTO>>();
-
-        app.MapGet("imageannotations/subimages", async (DataContext dataContext) =>
-        {
-            var subImageAnnotations = await dataContext.SubImageGroups.Select(x => new SubImageAnnotationGroupDTO
-            {
-                Users = x.Users.Select(y => y.ID).ToList(),
-                SubImageAnnotations = x.SubImageAnnotations.Select(y => new SubImageAnnotationDTO
-                {
-                    ID = y.ID,
-                    Created = y.Created,
-                    Updated = y.Updated,
-                    X = y.X,
-                    Y = y.Y,
-                    Width = y.Width,
-                    Height = y.Height,
-                    Image = y.ImageID,
-                    SubImageAnnotationGroup = y.SubImageAnnotationGroupID,
-                    TrashSuperCategories = y.TrashSuperCategories.Select(z => z.ID).ToList(),
-                    TrashSuperCategoriesConsensus = y.TrashSuperCategoriesConsensus.ID,
-                    TrashSubCategories = y.TrashSubCategories.Select(z => z.ID).ToList(),
-                    TrashSubCategoriesConsensus = y.TrashSubCategoriesConsensus.ID,
-                    Segmentations = y.Segmentations.Select(z => z.ID).ToList(),
-                    IsComplete = y.IsComplete,
-                    IsInProgress = y.IsInProgress,
-                }).ToList(),
-                ImageAnnotation = x.ImageAnnotationID,
-            }).ToListAsync();
-
-            return Results.Ok(subImageAnnotations);
-        }).Produces<List<SubImageAnnotationGroupDTO>>();*/
-
         app.MapPost("imageannotations/{id}/subimages", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, SubImageAnnotationGroupDTO subImageAnnotation) =>
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -148,13 +86,8 @@ public static class SubImageEndpoints
             if (user == null)
                 return Results.BadRequest("User not found");
 
-            var lockstopwatch = new Stopwatch();
-            lockstopwatch.Start();
             await using (await SubImagesLock.WaitAsyncDisposable())
             {
-                lockstopwatch.Stop();
-                Console.WriteLine($"SIpLC: {lockstopwatch.Elapsed}");
-
                 var dbstopwatch = new Stopwatch();
                 dbstopwatch.Start();
                 var imageAnnotation = await dataContext
@@ -166,8 +99,6 @@ public static class SubImageEndpoints
                     .ThenInclude(x => x.SubImageAnnotations)
                     .AsSplitQuery()
                     .FirstOrDefaultAsync(x => x.ID == id);
-                dbstopwatch.Stop();
-                Console.WriteLine($"SIpDB: {dbstopwatch.Elapsed}");
 
                 if (imageAnnotation == null)
                     return Results.NotFound("ImageAnnotation not found");
@@ -175,14 +106,8 @@ public static class SubImageEndpoints
                 if (imageAnnotation.SubImageAnnotationGroups.Any(x => x.Users.Any(z => z.ID == user.ID)))
                     return Results.BadRequest("User has already submitted a subimages for this image");
 
-                var sestopwatch = new Stopwatch();
-                sestopwatch.Start();
                 FindAndUpdateBestFitGroup(ref imageAnnotation, ref subImageAnnotation, ref user, 0.5f);
-                sestopwatch.Stop();
-                Console.WriteLine($"SIpSE: {sestopwatch.Elapsed}");
 
-                var savetopwatch = new Stopwatch();
-                savetopwatch.Start();
                 try
                 {
                     await dataContext.SaveChangesAsync();
@@ -198,11 +123,7 @@ public static class SubImageEndpoints
                     }
                     return Results.BadRequest(errorMessage);
                 }
-                savetopwatch.Stop();
-                Console.WriteLine($"SIpSV: {savetopwatch.Elapsed}");
 
-                stopwatch.Stop();
-                Console.WriteLine($"SIp: {stopwatch.Elapsed}");
                 return Results.Ok();
             }
         });

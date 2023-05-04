@@ -14,9 +14,6 @@ public static class SegmentationEndpoints
     {
         app.MapGet("/imageannotations/subimageannotations/segmentations/next", async (DataContext dataContext, ClaimsPrincipal claims) =>
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -31,9 +28,6 @@ public static class SegmentationEndpoints
 
             SubImageAnnotationEntity? nextSubImageAnnotation = null;
 
-
-            var dbstopwatch = new Stopwatch();
-            dbstopwatch.Start();
             var subImageAnnotations = await dataContext
                 .SubImageAnnotations
                 .Include(x => x.SubImageAnnotationGroup)
@@ -49,18 +43,14 @@ public static class SegmentationEndpoints
                 .Include(x => x.Segmentations)
                 .AsSplitQuery()
                 .ToListAsync();
-            dbstopwatch.Stop();
-            Console.WriteLine($"SenDB: {dbstopwatch.Elapsed}");
 
-            var sestopwatch = new Stopwatch();
-            sestopwatch.Start();
             int priority = 0;
             foreach (var subImageAnnotation in subImageAnnotations
                 .Where(x => (x.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == x.SubImageAnnotationGroup
                             || x.SubImageAnnotationGroup.Users.Any(y => y.ID == userID))
                             && !x.Segmentations.Any(y => y.UserID == user.ID)
-                            && x.TrashSubCategoriesConsensus
-                            && x.TrashSuperCategoriesConsensus)
+                            && (x.TrashSubCategoriesConsensus || x.TrashSubCategories.Any(y => y.Users.Any(z => z.ID == user.ID)))
+                            && (x.TrashSuperCategoriesConsensus || x.TrashSuperCategories.Any(y => y.Users.Any(z => z.ID == user.ID))))
                             .OrderBy(x => x.Segmentations.Count))
             {
                 bool consensus = subImageAnnotation.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == subImageAnnotation.SubImageAnnotationGroup;
@@ -98,8 +88,6 @@ public static class SegmentationEndpoints
                     nextSubImageAnnotation = subImageAnnotation;
                 }
             }
-            sestopwatch.Stop();
-            Console.WriteLine($"SenSE: {sestopwatch.Elapsed}");
 
             if (nextSubImageAnnotation == null) return Results.NotFound();
 
@@ -123,16 +111,11 @@ public static class SegmentationEndpoints
                 IsInProgress = nextSubImageAnnotation.IsInProgress,
             };
 
-            stopwatch.Stop();
-            Console.WriteLine($"Sen: {stopwatch.Elapsed}");
             return Results.Ok(subImageAnnotationDTO);
         }).Produces<SubImageAnnotationDTO>();
 
         app.MapPost("imageannotations/subimageannotations/{id}/segmentations", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, SegmentationDTO segmentation) =>
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 
             if (userIdClaim == null)
@@ -186,8 +169,6 @@ public static class SegmentationEndpoints
                 SegmentationLock.Release();
             }
 
-            stopwatch.Stop();
-            Console.WriteLine($"Sep: {stopwatch.Elapsed}");
             return Results.Ok();
         });
     }
