@@ -110,24 +110,24 @@ app.UseAuthorization();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.MapConfigurationEndpoints();
-app.MapUserEndpoints();
-app.MapImageEndpoints();
-app.MapContextClassificationEndpoints();
-app.MapBackgroundclassifiCationEndpoints();
-app.MapSubImageEndpoints();
-app.MapTrashSubCatagoryEndpoints();
-app.MapTrashSuperCategoryEndpoints();
-app.MapLeaderboardEndpoints();
-app.MapImageAnnotationEndpoints();
-app.MapSegmentationEndpoints();
-app.MapUserGoalEndpoints();
-app.MapCommunityGoalEndpoints();
-app.MapDatabaseInfoEndpoints();
-
 if (builder.Environment.IsDevelopment())
 {
     app.MapDebugEndpoints(builder);
 }
+
+app.MapConfigurationEndpoints();
+app.MapUserEndpoints();
+app.MapCommunityGoalEndpoints();
+app.MapUserGoalEndpoints();
+app.MapLeaderboardEndpoints();
+app.MapDatabaseInfoEndpoints();
+app.MapImageEndpoints();
+app.MapBackgroundclassifiCationEndpoints();
+app.MapContextClassificationEndpoints();
+app.MapSubImageGroupEndpoints();
+app.MapTrashSubCatagoryEndpoints();
+app.MapTrashSuperCategoryEndpoints();
+app.MapImageAnnotationEndpoints();
+app.MapSegmentationEndpoints();
 
 app.Run();

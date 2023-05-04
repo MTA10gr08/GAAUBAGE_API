@@ -8,7 +8,6 @@ public static class ConfigurationEndpoints
     {
         app.MapGet("/configuration/categories", (IOptions<AppSettings> IappSettings) =>
         {
-
             CategoriesDTO categories = new()
             {
                 BackgroundCategories = IappSettings.Value.BackgroundCategories,

@@ -29,8 +29,7 @@ public static class UserGoalEndpoints
             if (user == null)
                 return Results.BadRequest("User not found");
 
-            var now = DateTime.UtcNow;
-            var startOfDayUtc = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0, DateTimeKind.Utc);
+            var startOfDayUtc = DateTimeOffset.Now.Date.AddHours(12);
 
             List<UserGoalDTO> userGoals = new()
             {
@@ -38,25 +37,25 @@ public static class UserGoalEndpoints
                 {
                     TaskType = "CC",
                     TotalToDo = 10u,
-                    Done = (uint)user.BackgroundClassifications.Count(x => x.Created.Date >= startOfDayUtc),
+                    Done = (uint)user.BackgroundClassifications.Count(x => x.Created >= startOfDayUtc),
                 },
                 new()
                 {
                     TaskType = "SI",
                     TotalToDo = 10u,
-                    Done = (uint)user.SubImageAnnotationGroups.Count(x => x.Created.Date >= startOfDayUtc),
+                    Done = (uint)user.SubImageAnnotationGroups.Count(x => x.Created >= startOfDayUtc),
                 },
                 new()
                 {
                     TaskType = "TC",
                     TotalToDo = 5u,
-                    Done = (uint)user.TrashSubCategories.Count(x => x.Created.Date >= startOfDayUtc),
+                    Done = (uint)user.TrashSubCategories.Count(x => x.Created >= startOfDayUtc),
                 },
                 new()
                 {
                     TaskType = "Se",
                     TotalToDo = 5u,
-                    Done = (uint)user.Segmentations.Count(x => x.Created.Date >= startOfDayUtc),
+                    Done = (uint)user.Segmentations.Count(x => x.Created >= startOfDayUtc),
                 }
             };
 

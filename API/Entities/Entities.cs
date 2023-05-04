@@ -24,11 +24,34 @@ public class UserEntity : BaseEntity
     public ICollection<TrashSuperCategoryEntity> TrashSuperCategories { get; set; } = new HashSet<TrashSuperCategoryEntity>();
     public ICollection<TrashSubCategoryEntity> TrashSubCategories { get; set; } = new HashSet<TrashSubCategoryEntity>();
     public ICollection<SegmentationEntity> Segmentations { get; set; } = new HashSet<SegmentationEntity>();
+
     public uint Score
     {
         get
         {
-            return (uint)((BackgroundClassifications.Count * 1) + (SubImageAnnotationGroups.Count * 2) + (TrashSubCategories.Count * 3) + (Segmentations.Count * 4));
+            var score = BackgroundClassifications
+            .GroupBy(e => e.Created.Date.AddHours(-12))
+            .Where(g => g.Count() > 10)
+            .Select(g => g.Key)
+            .Count() * 5;
+            score += SubImageAnnotationGroups
+            .GroupBy(e => e.Created.Date.AddHours(-12))
+            .Where(g => g.Count() > 10)
+            .Select(g => g.Key)
+            .Count() * 5;
+            score += TrashSubCategories
+            .GroupBy(e => e.Created.Date.AddHours(-12))
+            .Where(g => g.Count() > 5)
+            .Select(g => g.Key)
+            .Count() * 5;
+            score += Segmentations
+            .GroupBy(e => e.Created.Date.AddHours(-12))
+            .Where(g => g.Count() > 5)
+            .Select(g => g.Key)
+            .Count() * 5;
+            score += (BackgroundClassifications.Count * 1) + (SubImageAnnotationGroups.Count * 2) + (TrashSubCategories.Count * 3) + (Segmentations.Count * 4);
+
+            return (uint)score;
         }
     }
     public uint Level

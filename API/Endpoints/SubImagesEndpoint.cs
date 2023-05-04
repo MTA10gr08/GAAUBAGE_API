@@ -10,7 +10,7 @@ namespace API.Endpoints;
 public static class SubImageEndpoints
 {
     private static readonly SemaphoreSlim SubImagesLock = new SemaphoreSlim(1, 1);
-    public static void MapSubImageEndpoints(this WebApplication app)
+    public static void MapSubImageGroupEndpoints(this WebApplication app)
     {
         app.MapGet("/imageannotations/subimages/next", async (DataContext dataContext, ClaimsPrincipal user) =>
         {
@@ -78,7 +78,7 @@ public static class SubImageEndpoints
         }).Produces<ImageAnnotationDTO>();
 
 
-        app.MapGet("imageannotations/subimages", async (DataContext dataContext) =>
+        /*app.MapGet("imageannotations/subimages", async (DataContext dataContext) =>
         {
             var subImageAnnotations = await dataContext.SubImageAnnotations.Select(x => new SubImageAnnotationDTO
             {
@@ -101,7 +101,7 @@ public static class SubImageEndpoints
             return Results.Ok(subImageAnnotations);
         }).Produces<List<SubImageAnnotationDTO>>();
 
-        app.MapGet("imageannotations/subimagegroups", async (DataContext dataContext) =>
+        app.MapGet("imageannotations/subimages", async (DataContext dataContext) =>
         {
             var subImageAnnotations = await dataContext.SubImageGroups.Select(x => new SubImageAnnotationGroupDTO
             {
@@ -129,7 +129,7 @@ public static class SubImageEndpoints
             }).ToListAsync();
 
             return Results.Ok(subImageAnnotations);
-        }).Produces<List<SubImageAnnotationGroupDTO>>();
+        }).Produces<List<SubImageAnnotationGroupDTO>>();*/
 
         app.MapPost("imageannotations/{id}/subimages", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, SubImageAnnotationGroupDTO subImageAnnotation) =>
         {
@@ -148,17 +148,26 @@ public static class SubImageEndpoints
             if (user == null)
                 return Results.BadRequest("User not found");
 
+            var lockstopwatch = new Stopwatch();
+            lockstopwatch.Start();
             await using (await SubImagesLock.WaitAsyncDisposable())
             {
+                lockstopwatch.Stop();
+                Console.WriteLine($"SIpLC: {lockstopwatch.Elapsed}");
 
+                var dbstopwatch = new Stopwatch();
+                dbstopwatch.Start();
                 var imageAnnotation = await dataContext
                     .ImageAnnotations
                     .Include(x => x.Image)
-                     .Include(x => x.SubImageAnnotationGroups)
+                    .Include(x => x.SubImageAnnotationGroups)
                     .ThenInclude(x => x.Users)
                     .Include(x => x.SubImageAnnotationGroups)
                     .ThenInclude(x => x.SubImageAnnotations)
+                    .AsSplitQuery()
                     .FirstOrDefaultAsync(x => x.ID == id);
+                dbstopwatch.Stop();
+                Console.WriteLine($"SIpDB: {dbstopwatch.Elapsed}");
 
                 if (imageAnnotation == null)
                     return Results.NotFound("ImageAnnotation not found");
@@ -166,8 +175,14 @@ public static class SubImageEndpoints
                 if (imageAnnotation.SubImageAnnotationGroups.Any(x => x.Users.Any(z => z.ID == user.ID)))
                     return Results.BadRequest("User has already submitted a subimages for this image");
 
+                var sestopwatch = new Stopwatch();
+                sestopwatch.Start();
                 FindAndUpdateBestFitGroup(ref imageAnnotation, ref subImageAnnotation, ref user, 0.5f);
+                sestopwatch.Stop();
+                Console.WriteLine($"SIpSE: {sestopwatch.Elapsed}");
 
+                var savetopwatch = new Stopwatch();
+                savetopwatch.Start();
                 try
                 {
                     await dataContext.SaveChangesAsync();
@@ -183,6 +198,8 @@ public static class SubImageEndpoints
                     }
                     return Results.BadRequest(errorMessage);
                 }
+                savetopwatch.Stop();
+                Console.WriteLine($"SIpSV: {savetopwatch.Elapsed}");
 
                 stopwatch.Stop();
                 Console.WriteLine($"SIp: {stopwatch.Elapsed}");

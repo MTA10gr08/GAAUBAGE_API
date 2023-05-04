@@ -149,22 +149,5 @@ public static class BackgroundclassifiCationEndpoints
                 return Results.Ok();
             }
         });
-
-        app.MapGet("imageannotations/backgroundclassifications", async (DataContext dataContext) =>
-        {
-            var imageAnnotation = dataContext.BackgroundClassifications;
-
-            var backgroundClassifications = await imageAnnotation.Select(x => new BackgroundClassificationDTO
-            {
-                ID = x.ID,
-                Created = x.Created,
-                Updated = x.Updated,
-                BackgroundClassificationLabels = x.BackgroundClassificationStrings.Select(x => x.value).ToList(),
-                Users = x.Users.Select(x => x.ID).ToList(),
-                ImageAnnotation = x.ImageAnnotation.ID,
-            }).ToListAsync();
-
-            return Results.Ok(backgroundClassifications);
-        });
     }
 }

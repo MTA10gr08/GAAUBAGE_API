@@ -60,7 +60,8 @@ public static class SegmentationEndpoints
                             || x.SubImageAnnotationGroup.Users.Any(y => y.ID == userID))
                             && !x.Segmentations.Any(y => y.UserID == user.ID)
                             && x.TrashSubCategoriesConsensus
-                            && x.TrashSuperCategoriesConsensus))
+                            && x.TrashSuperCategoriesConsensus)
+                            .OrderBy(x => x.Segmentations.Count))
             {
                 bool consensus = subImageAnnotation.SubImageAnnotationGroup.ImageAnnotation.SubImageAnnotationGroupConsensus == subImageAnnotation.SubImageAnnotationGroup;
                 bool userInGroup = subImageAnnotation.SubImageAnnotationGroup.Users.Any(y => y.ID == userID);
