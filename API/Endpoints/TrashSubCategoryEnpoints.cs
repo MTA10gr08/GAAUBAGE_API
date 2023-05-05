@@ -101,7 +101,7 @@ public static class TrashSubCategoryEndpoints
             return Results.Ok(subImageAnnotationDTO);
         }).Produces<SubImageAnnotationDTO>();
 
-        app.MapPost("imageannotations/subimageannotations/{id}/trashsubcategories/me", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, TrashSubCategoryDTO trashSubCategory) =>
+        app.MapPost("imageannotations/subimageannotations/{id}/trashsubcategories", async (Guid id, DataContext dataContext, ClaimsPrincipal claims, TrashSubCategoryDTO trashSubCategory) =>
         {
             var userIdClaim = claims.FindFirst(ClaimTypes.NameIdentifier);
 

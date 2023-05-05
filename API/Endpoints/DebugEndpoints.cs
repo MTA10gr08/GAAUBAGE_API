@@ -126,7 +126,7 @@ public static class DebugEndpoints
 
 
             int sucesses = 0;
-            for (int i = 0; i < 10000; i++)
+            for (int i = 0; i < 1000; i++)
             {
                 var clientindex = Task.WaitAny(clients.Values.ToArray());
                 var client = clients.ElementAt(clientindex);

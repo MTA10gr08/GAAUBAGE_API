@@ -27,6 +27,7 @@ public static class SubImageEndpoints
             var imageAnnotations = await dataContext
                 .ImageAnnotations
                 .Where(x => !x.SubImageAnnotationGroups.Any(y => y.Users.Any(z => z.ID == userId)))
+                .Where(x => !x.VoteSkipped.Any(y => y.ID == userId))
                 .Include(x => x.Image)
                 .Include(x => x.ContextClassifications)
                 .ThenInclude(x => x.Users)

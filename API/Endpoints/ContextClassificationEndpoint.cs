@@ -25,6 +25,7 @@ public static class ContextClassificationEndpoints
             var imageAnnotations = await dataContext
                 .ImageAnnotations
                 .Where(x => !x.ContextClassifications.Any(y => y.Users.Any(w => w.ID == userId)))
+                .Where(x => !x.VoteSkipped.Any(y => y.ID == userId))
                 .Include(x => x.Image)
                 .Include(x => x.ContextClassifications)
                 .ThenInclude(x => x.Users)
