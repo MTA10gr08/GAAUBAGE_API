@@ -31,6 +31,7 @@ public static class BackgroundclassifiCationEndpoints
                 .ThenInclude(x => x.Users)
                 .Include(x => x.BackgroundClassifications)
                 .ThenInclude(x => x.Users)
+                .AsSplitQuery()
                 .ToListAsync();
 
             foreach (var imageAnnotation in imageAnnotations.Where(x => !x.IsSkipped))
@@ -93,6 +94,7 @@ public static class BackgroundclassifiCationEndpoints
                 .ThenInclude(x => x.Users)
                 .Include(x => x.BackgroundClassifications)
                 .ThenInclude(x => x.BackgroundClassificationStrings)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(x => x.ID == id);
 
                 if (imageAnnotation == null)

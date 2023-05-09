@@ -25,6 +25,7 @@ public static class UserGoalEndpoints
             .Include(x => x.SubImageAnnotationGroups)
             .Include(x => x.TrashSubCategories)
             .Include(x => x.Segmentations)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(x => x.ID == userID);
             if (user == null)
                 return Results.BadRequest("User not found");

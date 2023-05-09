@@ -49,7 +49,7 @@ public class UserEntity : BaseEntity
             .Where(g => g.Count() > 5)
             .Select(g => g.Key)
             .Count() * 5;
-            score += (BackgroundClassifications.Count * 1) + (SubImageAnnotationGroups.Count * 2) + (TrashSubCategories.Count * 3) + (Segmentations.Count * 4);
+            score += (BackgroundClassifications.Count * 1) + (SubImageAnnotationGroups.Count * 1) + (TrashSubCategories.Count * 2) + (Segmentations.Count * 2);
 
             return (uint)score;
         }
@@ -58,7 +58,7 @@ public class UserEntity : BaseEntity
     {
         get
         {
-            return (uint)(Score > 200 ? 4 : Score > 100 ? 3 : Score > 40 ? 2 : Score > 10 ? 1 : 0);
+            return (uint)(Score > 150 ? 4 : Score > 100 ? 3 : Score > 50 ? 2 : Score > 25 ? 1 : 0);
         }
     }
 }

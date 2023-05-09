@@ -20,6 +20,7 @@ public static class DatabaseInfoEndpoints
                 .ThenInclude(x => x.Users)
                 .Include(x => x.SubImageAnnotationGroups)
                 .ThenInclude(x => x.Users)
+                .AsSplitQuery()
                 .ToListAsync())
                 .Count(x => x.IsSkipped),
 
@@ -28,6 +29,7 @@ public static class DatabaseInfoEndpoints
                 TotalBackgroundClassified = (uint)(await dataContext.ImageAnnotations
                 .Include(x => x.BackgroundClassifications)
                 .ThenInclude(x => x.Users)
+                .AsSplitQuery()
                 .ToListAsync())
                 .Count(x => x.BackgroundClassificationConsensus != null),
 
@@ -36,6 +38,7 @@ public static class DatabaseInfoEndpoints
                 TotalContextClassified = (uint)(await dataContext.ImageAnnotations
                 .Include(x => x.ContextClassifications)
                 .ThenInclude(x => x.Users)
+                .AsSplitQuery()
                 .ToListAsync())
                 .Count(x => x.ContextClassificationConsensus != null),
 
@@ -44,6 +47,7 @@ public static class DatabaseInfoEndpoints
                 TotalSubImageGrouped = (uint)(await dataContext.ImageAnnotations
                 .Include(x => x.SubImageAnnotationGroups)
                 .ThenInclude(x => x.Users)
+                .AsSplitQuery()
                 .ToListAsync())
                 .Count(x => x.SubImageAnnotationGroupConsensus != null),
 
@@ -52,6 +56,7 @@ public static class DatabaseInfoEndpoints
                 .ThenInclude(x => x.Users)
                 .Include(x => x.SubImageAnnotationGroups)
                 .ThenInclude(x => x.SubImageAnnotations)
+                .AsSplitQuery()
                 .ToListAsync())
                 .Sum(x => x.SubImageAnnotationGroups.Sum(y => y.SubImageAnnotations.Count)),
 
@@ -60,6 +65,7 @@ public static class DatabaseInfoEndpoints
                 TotalTrashSubCategorised = (uint)(await dataContext.SubImageAnnotations
                 .Include(x => x.TrashSubCategories)
                 .ThenInclude(x => x.Users)
+                .AsSplitQuery()
                 .ToListAsync())
                 .Count(x => x.TrashSubCategoriesConsensus != null),
 
@@ -68,6 +74,7 @@ public static class DatabaseInfoEndpoints
                 TotalTrashSuperCategorised = (uint)(await dataContext.SubImageAnnotations
                 .Include(x => x.TrashSuperCategories)
                 .ThenInclude(x => x.Users)
+                .AsSplitQuery()
                 .ToListAsync())
                 .Count(x => x.TrashSuperCategoriesConsensus != null),
 

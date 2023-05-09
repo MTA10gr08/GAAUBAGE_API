@@ -38,6 +38,7 @@ public static class UserEndpoints
             .Include(x => x.TrashSubCategories)
             .Include(x => x.SubImageAnnotationGroups)
             .Include(x => x.Segmentations)
+            .AsSplitQuery()
             .Select(userEntity => new UserDTO()
             {
                 ID = userEntity.ID,
@@ -87,6 +88,7 @@ public static class UserEndpoints
                 .Include(x => x.TrashSubCategories)
                 .Include(x => x.TrashSuperCategories)
                 .Include(x => x.Segmentations)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(x => x.ID == user.ID);
 
             if (userEntity != null)

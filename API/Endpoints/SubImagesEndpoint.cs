@@ -33,6 +33,7 @@ public static class SubImageEndpoints
                 .ThenInclude(x => x.Users)
                 .Include(x => x.BackgroundClassifications)
                 .ThenInclude(x => x.Users)
+                .AsSplitQuery()
                 .ToListAsync();
 
             foreach (var imageAnnotation in imageAnnotations.Where(x => !x.IsSkipped))

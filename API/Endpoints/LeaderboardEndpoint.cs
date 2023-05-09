@@ -26,6 +26,7 @@ public static class LeaderboardEndpoints
                 .Include(x => x.TrashSubCategories)
                 .Include(x => x.TrashSuperCategories)
                 .Include(x => x.Segmentations)
+                .AsSplitQuery()
                 .ToListAsync())
                 .Select(x => new
                 {

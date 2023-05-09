@@ -133,6 +133,7 @@ public static class SegmentationEndpoints
             var subImageAnnotation = await dataContext
                 .SubImageAnnotations
                 .Include(x => x.Segmentations)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(x => x.ID == id);
 
             if (subImageAnnotation == null)

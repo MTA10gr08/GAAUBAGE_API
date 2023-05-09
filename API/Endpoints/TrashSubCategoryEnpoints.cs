@@ -32,6 +32,7 @@ public static class TrashSubCategoryEndpoints
                 .ThenInclude(x => x.Users)
                 .Include(x => x.TrashSubCategories)
                 .ThenInclude(x => x.Users)
+                .AsSplitQuery()
                 .ToListAsync();
 
             int priority = 0;
@@ -121,6 +122,7 @@ public static class TrashSubCategoryEndpoints
                     .SubImageAnnotations
                     .Include(x => x.TrashSubCategories)
                     .ThenInclude(x => x.Users)
+                    .AsSplitQuery()
                     .FirstOrDefaultAsync(x => x.ID == id);
 
                 if (subImageAnnotation == null)
@@ -222,6 +224,7 @@ public static class TrashSubCategoryEndpoints
                 .SubImageAnnotations
                 .Include(x => x.TrashSubCategories)
                 .ThenInclude(x => x.Users)
+                .AsSplitQuery()
                 .SingleOrDefaultAsync(x => x.ID == id))?
                 .TrashSubCategories.SingleOrDefault(x => x.Users.SingleOrDefault(z => z.ID == user.ID));
 
