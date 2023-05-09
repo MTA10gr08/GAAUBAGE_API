@@ -33,7 +33,12 @@ public static class UserEndpoints
             var user = await dataContext.Users.FindAsync(userID);
             if (user == null) return Results.BadRequest("User not found");
 
-            return Results.Ok(await dataContext.Users.Select(userEntity => new UserDTO()
+            return Results.Ok(await dataContext.Users
+            .Include(x => x.BackgroundClassifications)
+            .Include(x => x.TrashSubCategories)
+            .Include(x => x.SubImageAnnotationGroups)
+            .Include(x => x.Segmentations)
+            .Select(userEntity => new UserDTO()
             {
                 ID = userEntity.ID,
                 Created = userEntity.Created,
