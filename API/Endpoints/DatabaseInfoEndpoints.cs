@@ -60,7 +60,7 @@ public static class DatabaseInfoEndpoints
                 .ToListAsync())
                 .Sum(x => x.SubImageAnnotationGroups.Sum(y => y.SubImageAnnotations.Count)),
 
-                TotalTrashSubCategorisations = (uint)await dataContext.SubImageAnnotations.CountAsync(),
+                TotalTrashSubCategorisations = (uint)await dataContext.TrashSubCategories.CountAsync(),
 
                 TotalTrashSubCategorised = (uint)(await dataContext.SubImageAnnotations
                 .Include(x => x.TrashSubCategories)
@@ -69,7 +69,7 @@ public static class DatabaseInfoEndpoints
                 .ToListAsync())
                 .Count(x => x.TrashSubCategoriesConsensus != null),
 
-                TotalTrashSuperCategorisations = (uint)await dataContext.SubImageAnnotations.CountAsync(),
+                TotalTrashSuperCategorisations = (uint)await dataContext.TrashSuperCategories.CountAsync(),
 
                 TotalTrashSuperCategorised = (uint)(await dataContext.SubImageAnnotations
                 .Include(x => x.TrashSuperCategories)
