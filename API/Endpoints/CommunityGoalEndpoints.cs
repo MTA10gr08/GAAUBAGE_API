@@ -28,9 +28,9 @@ public static class CommunityGoalEndpoints
             int diffToMonday = ((int)now.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
             var startOfWeekUtc = now.AddDays(-diffToMonday).Date.AddHours(12);
 
-            var backgroundClassifications = await dataContext.BackgroundClassifications.ToListAsync();
-            var SubImageGroups = await dataContext.SubImageGroups.ToListAsync();
-            var TrashSubCategories = await dataContext.TrashSubCategories.ToListAsync();
+            var backgroundClassifications = await dataContext.BackgroundClassifications.Include(x => x.Users).ToListAsync();
+            var SubImageGroups = await dataContext.SubImageGroups.Include(x => x.Users).ToListAsync();
+            var TrashSubCategories = await dataContext.TrashSubCategories.Include(x => x.Users).ToListAsync();
             var Segmentations = await dataContext.Segmentations.ToListAsync();
 
             return (DateTime.UtcNow.Day % 4) switch
