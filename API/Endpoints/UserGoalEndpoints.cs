@@ -30,7 +30,7 @@ public static class UserGoalEndpoints
             if (user == null)
                 return Results.BadRequest("User not found");
 
-            var startOfDayUtc = DateTimeOffset.Now.Date.AddHours(-12);
+            var startOfDayUtc = DateTimeOffset.UtcNow.AddHours(-12).Date.AddHours(12);
 
             List<UserGoalDTO> userGoals = new()
             {

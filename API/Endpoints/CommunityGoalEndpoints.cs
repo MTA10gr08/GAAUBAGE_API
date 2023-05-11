@@ -24,7 +24,7 @@ public static class CommunityGoalEndpoints
             if (user == null)
                 return Results.BadRequest("User not found");
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.UtcNow.AddHours(-12);
             int diffToMonday = ((int)now.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
             var startOfWeekUtc = now.AddDays(-diffToMonday).Date.AddHours(12);
 
